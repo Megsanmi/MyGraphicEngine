@@ -1,0 +1,15 @@
+E:\Projects\Проект\App1\App\main.cpp;E:\Projects\Проект\App1\App\Release\main.obj
+E:\Projects\Проект\App1\App\lib\glad.c;E:\Projects\Проект\App1\App\Release\glad.obj
+E:\Projects\Проект\App1\App\lib\imgui\imgui.cpp;E:\Projects\Проект\App1\App\Release\imgui.obj
+E:\Projects\Проект\App1\App\lib\imgui\imgui_draw.cpp;E:\Projects\Проект\App1\App\Release\imgui_draw.obj
+E:\Projects\Проект\App1\App\lib\imgui\imgui_impl_glfw.cpp;E:\Projects\Проект\App1\App\Release\imgui_impl_glfw.obj
+E:\Projects\Проект\App1\App\lib\imgui\imgui_impl_opengl3.cpp;E:\Projects\Проект\App1\App\Release\imgui_impl_opengl3.obj
+E:\Projects\Проект\App1\App\lib\imgui\imgui_tables.cpp;E:\Projects\Проект\App1\App\Release\imgui_tables.obj
+E:\Projects\Проект\App1\App\lib\imgui\imgui_widgets.cpp;E:\Projects\Проект\App1\App\Release\imgui_widgets.obj
+E:\Projects\Проект\App1\App\Gameobjects\Mesh.cpp;E:\Projects\Проект\App1\App\Release\Mesh.obj
+E:\Projects\Проект\App1\App\Gameobjects\objloader.cpp;E:\Projects\Проект\App1\App\Release\objloader.obj
+E:\Projects\Проект\App1\App\lib\stb_image.cpp;E:\Projects\Проект\App1\App\Release\stb_image.obj
+E:\Projects\Проект\App1\App\Renderer\camera.cpp;E:\Projects\Проект\App1\App\Release\camera.obj
+E:\Projects\Проект\App1\App\Renderer\light.cpp;E:\Projects\Проект\App1\App\Release\light.obj
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.cpp;E:\Projects\Проект\App1\App\Release\ShaderProgram.obj
+E:\Projects\Проект\App1\App\Renderer\ShadowMap.cpp;E:\Projects\Проект\App1\App\Release\ShadowMap.obj

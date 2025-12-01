@@ -1,0 +1,10 @@
+﻿  light.cpp
+  main.cpp
+E:\Projects\Проект\App1\App\main.cpp(233,31): warning C4018: <: несоответствие типов со знаком и без знака
+E:\Projects\Проект\App1\App\main.cpp(269,25): warning C4305: аргумент: усечение из "double" в "float"
+  Создание кода
+  10 of 4454 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    73 functions had inline decision re-evaluated but remain unchanged
+  Создание кода завершено
+  App.vcxproj -> E:\Projects\Проект\App1\Release\MyEngine.exe

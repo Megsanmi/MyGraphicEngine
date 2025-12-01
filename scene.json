@@ -1,0 +1,48 @@
+{
+  "objects": [
+    {
+      "components": [
+        {
+          "position": [ 0.0, 0.0, 0.0 ],
+          "rotationEuler": [ 0.0, 1.0, 0.0 ],
+          "scale": [ 1.0, 1.0, 1.0 ],
+          "type": "Transform"
+        },
+        null
+      ],
+      "name": "Light"
+    },
+    {
+      "components": [
+        {
+          "position": [ 0.0, 0.0, 0.0 ],
+          "rotationEuler": [ 0.0, 1.0, 0.0 ],
+          "scale": [ 1.0, 1.0, 1.0 ],
+          "type": "Transform"
+        },
+        {
+          "isShaded": false,
+          "path": "assets/sky.obj",
+          "type": "MeshRenderer"
+        }
+      ],
+      "name": "Sky_box"
+    },
+    {
+      "components": [
+        {
+          "position": [ 0.0, 6.0, -3.0 ],
+          "rotationEuler": [ 71.0, 44.0, 0.0 ],
+          "scale": [ 1.0, 16.0, 21.0 ],
+          "type": "Transform"
+        },
+        {
+          "isShaded": true,
+          "path": "assets/",
+          "type": "MeshRenderer"
+        }
+      ],
+      "name": "Object"
+    }
+  ]
+}
