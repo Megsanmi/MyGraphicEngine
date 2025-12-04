@@ -27,11 +27,7 @@ ShadowMap::ShadowMap(unsigned int width, unsigned int height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Загружаем depth шейдер
-    //std::ifstream vsFile("Shaders/depth_shader_v.txt");
-    //std::ifstream fsFile("Shaders/depth_shader_f.txt");
-    //std::stringstream vsBuffer, fsBuffer;
-    //vsBuffer << vsFile.rdbuf();
-    //fsBuffer << fsFile.rdbuf();
+
     const char* vsBuffer = R"(
     #version 460
 
@@ -57,11 +53,8 @@ ShadowMap::ShadowMap(unsigned int width, unsigned int height)
     depthShader = new Renderer::ShaderProgram(vsBuffer, fsBuffer);
 
     
-    // Матрица вида света 
-    glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
-    glm::mat4 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, 1.f, 20.f);
-    glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0, 1, 0));
-    lightSpaceMatrix = lightProjection * lightView;
+
+
 
 }
 

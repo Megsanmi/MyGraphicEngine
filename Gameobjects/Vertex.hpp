@@ -8,11 +8,7 @@ struct Vertex {
     glm::vec3 Position;
     glm::vec3 Normal;
     glm::vec2 TexCoords;
-    /*
-    Vertex(glm::vec3 pos, glm::vec2 Text, glm::vec3 norm) {
-        Position = pos;
-        Normal = norm;
-        TexCoords = Text;
-    }
-    */
+    glm::vec3 Tangent;
+    glm::vec3 Bitangent;
+ 
 };

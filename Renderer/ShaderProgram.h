@@ -29,6 +29,10 @@ namespace Renderer {
 		void setBool(const std::string& name, bool value) {
 			glUniform1i(glGetUniformLocation(m_ID, name.c_str()), value);
 		}
+		void setFloat(const std::string& name, float value)
+		{
+			glUniform1i(glGetUniformLocation(m_ID, name.c_str()), value);
+		}
 		
 		GLuint m_ID = 0;
 	private:

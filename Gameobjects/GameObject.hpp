@@ -32,7 +32,7 @@ public:
     {
         return {};
     }
-  
+   
     virtual void Deserialize(const json& j) {}  //их загрузка 
     virtual void drawInspector() {}
 };
@@ -51,9 +51,9 @@ public:
 
     void drawInspector()
     {
-        ImGui::DragFloat3("position", &position.x, 1.0f);
-        ImGui::DragFloat3("rotationEuler", &rotationEuler.x, 1.0f);
-        ImGui::DragFloat3("scale", &scale.x, 1.0f);
+        ImGui::DragFloat3("position", &position.x, 0.1f);
+        ImGui::DragFloat3("rotationEuler", &rotationEuler.x, 0.5f);
+        ImGui::DragFloat3("scale", &scale.x, 0.01f);
 
     };
     json Serialize() override {
@@ -147,6 +147,7 @@ public:
     std::unique_ptr<Model> model;
     std::string path;
     Renderer::ShaderProgram& shaderProgram;
+    bool UseNormalMap = false;
     bool isShaded = true;
 
     MeshRenderer(const std::string& modelPath, Renderer::ShaderProgram& shader) : path(modelPath), shaderProgram(shader){
@@ -161,6 +162,7 @@ public:
     {
         ImGui::Text("path", path.c_str());
         ImGui::Checkbox("isShaded", &isShaded);
+        ImGui::Checkbox("UseNormalMap", &UseNormalMap);
 
     };
 
@@ -168,7 +170,9 @@ public:
         return{
             {"type","MeshRenderer"},
             {"path",path},
-            {"isShaded",isShaded}
+            {"isShaded",isShaded},
+            { "UseNormalMap",UseNormalMap
+ }
         };
     };
 
@@ -185,6 +189,7 @@ public:
             shaderProgram.use();
             shaderProgram.setMatrix4("model_matrix", gameObject->transform->GetMatrix());  
             shaderProgram.setBool("isShaded", isShaded);
+            shaderProgram.setBool("UseNormalMap", UseNormalMap);
             model->Draw(shaderProgram);
         }
     }

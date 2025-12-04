@@ -21,11 +21,11 @@ public:
 	ShadowMap& Shadowmap;
 
 	
-	float nearPlane = 0.5f;
+	float nearPlane = 0.1f;
 	float farPlane = 1000.f;
 
-	float planeW = 500.f * 2.0f; 
-	float planeH = 500.f * 2.0f;
+	float planeW = 100.f; 
+	float planeH = 100.f;
 
 	int WIDTH;
 	int HEIGHT;
@@ -44,6 +44,8 @@ public:
 
 	void drawInspector()
 	{
+		
+
 		ImGui::DragFloat2("shadow zone: ", &planeW, 0.1f);
 		ImGui::ColorEdit3("rotationEuler", &color.x);
 

@@ -32,7 +32,7 @@ void Light::DrawShadowMap(glm::mat4 model, unsigned int texID)
     shaderprogram.use();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texID);
-    shaderprogram.setInt("shadowMap", 0);
+
     shaderprogram.setMatrix4("model_matrix", model);
 
     glBindVertexArray(quadVAO);
@@ -55,7 +55,7 @@ void Light::drawShade(int width, int height)
     lightDir.y = sin(glm::radians(pitch));
     lightDir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-    glm::vec3 lightPos = transform->position - lightDir*100.0f;
+    glm::vec3 lightPos = transform->position - lightDir * 100.f;
 
     glm::mat4 lightView = glm::lookAt(lightPos, lightPos + lightDir, { 0,1,0 });
     
@@ -84,9 +84,13 @@ void Light::drawShade(int width, int height)
 
 
 
+
+
+   
     Shadowmap.beginRender();
 
-
+    Shadowmap.setLightSpaceMatrix(lightSpaceMatrix);
+    
     for (auto& obj : m_objects)
     {
         auto mesh = obj->GetComponent<MeshRenderer>();
@@ -94,21 +98,19 @@ void Light::drawShade(int width, int height)
             mesh->Draw(Shadowmap.getShader());
             
     }
-    
-   
-    
+  
     Shadowmap.endRender(width, height);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    shaderprogram.use();
+
+    
     
     DrawShadowMap(model, Shadowmap.getDepthTex());
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, Shadowmap.getDepthTex());
     
 
-
-    Shadowmap.setLightSpaceMatrix(lightSpaceMatrix);
-
+    shaderprogram.use();
 
     
     shaderprogram.setMatrix4("lightSpaceMatrix", lightSpaceMatrix);
@@ -116,5 +118,4 @@ void Light::drawShade(int width, int height)
     shaderprogram.setVec3("light_color", color);
     shaderprogram.setVec3("ambient_color", ambient);
     
-    glActiveTexture(GL_TEXTURE0);
 }

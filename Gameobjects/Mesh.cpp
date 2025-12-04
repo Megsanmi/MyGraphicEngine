@@ -48,7 +48,18 @@ void Mesh::setupMesh()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
 
+    // Tangent
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+
+    // Bitangent
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
+
     glBindVertexArray(0);
+    
+
+
 }
 void Mesh::Draw(Renderer::ShaderProgram& shader)
 {
@@ -56,6 +67,7 @@ void Mesh::Draw(Renderer::ShaderProgram& shader)
 
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
+    //unsigned int normalNr = 1;
     for (unsigned int i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i); 
@@ -65,12 +77,13 @@ void Mesh::Draw(Renderer::ShaderProgram& shader)
             number = std::to_string(diffuseNr++);
         else if (name == "texture_specular")
             number = std::to_string(specularNr++);
+        //else if (name == "texture_normal")
+        //    number = std::to_string(normalNr++);
 
         shader.setInt(("material." + name + number).c_str(), i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
 
-        if (name == "texture_diffuse") diffuseNr++;
-        else if (name == "texture_specular") specularNr++;
+        
     }
     glActiveTexture(GL_TEXTURE0);
 
@@ -150,7 +163,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
         vertex.Normal = vector;  
 
-        if (mesh->mTextureCoords[0]) // действительно ли меш содержит текстурные координаты? 
+        if (mesh->mTextureCoords[0]) 
         {
             glm::vec2 vec;
             vec.x = mesh->mTextureCoords[0][i].x;
@@ -158,8 +171,29 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
             vertex.TexCoords = vec;
 
         }
-        else
-            vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+        else vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+
+        if (mesh->mTangents) {
+            vertex.Tangent = glm::vec3(
+                mesh->mTangents[i].x,
+                mesh->mTangents[i].y,
+                mesh->mTangents[i].z
+            );
+        }
+        else {
+            vertex.Tangent = glm::vec3(1, 0, 0);
+        }
+
+        if (mesh->mBitangents) {
+            vertex.Bitangent = glm::vec3(
+                mesh->mBitangents[i].x,
+                mesh->mBitangents[i].y,
+                mesh->mBitangents[i].z
+            );
+        }
+        else {
+            vertex.Bitangent = glm::vec3(0, 1, 0);
+        }
 
         vertices.push_back(vertex);
     }
@@ -176,15 +210,23 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     {
 
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-        std::vector<Texture> diffuseMaps = loadMaterialTextures(material,
-            aiTextureType_DIFFUSE, "texture_diffuse");
 
+        std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
         
-        std::vector<Texture> specularMaps = loadMaterialTextures(material,
-            aiTextureType_SPECULAR, "texture_specular");
+        std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", scene);
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         
+       std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal", scene);
+        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
+      /*  std::vector<Texture> diffuseMapsEmbended = loadMaterialTextures(material, aiTextureType_BASE_COLOR, "texture_diffuse", scene);
+        textures.insert(textures.end(), diffuseMapsEmbended.begin(), diffuseMapsEmbended.end());*/
+
+        std::vector<Texture> normalMapsEmbended = loadMaterialTextures(material, aiTextureType_NORMAL_CAMERA, "texture_normal", scene);
+        textures.insert(textures.end(), normalMapsEmbended.begin(), normalMapsEmbended.end());
+    
+        std::cout << "\n Normal Textures: " << normalMapsEmbended.size() + normalMaps.size() << std::endl;
     }
     else 
     {
@@ -194,7 +236,49 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     return Mesh(vertices, indices, textures);
 }
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
+unsigned int TextureFromEmbedded(aiTexture* tex) {
+
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char* data = stbi_load_from_memory((unsigned char*)tex->pcData, tex->mWidth, &width, &height, &nrComponents, 0);
+    if (!data)
+    {
+        data = stbi_load("assets/textures/default.jpg", &width, &height, &nrComponents, 0);
+    }
+    if (data)
+    {
+        GLenum format = GL_RGB;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        stbi_image_free(data);
+    }
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR)
+        std::cout << "GL ERROR: " << err << "\n";
+    return textureID;
+}
+
+std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene)
 {
     std::vector<Texture> textures;
 
@@ -213,15 +297,28 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 
     for (unsigned int i = 0; i < count; i++)
     {
+
         aiString str;
         mat->GetTexture(type, i, &str);
-
         Texture texture;
-        texture.id = TextureFromFile(str.C_Str(), directory, false);
-        texture.type = typeName;
-        texture.path = str.C_Str();
+        
+        if (str.C_Str()[0] == '*') {
+            // встроенная текстура GLB
+            int texIndex = atoi(str.C_Str() + 1);
+            aiTexture* tex = scene->mTextures[texIndex];
+            texture.id = TextureFromEmbedded(tex);
+            texture.type = typeName;
+            texture.path = "embedded";
 
-        textures.push_back(texture);
+            textures.push_back(texture);
+        }
+        else {
+            texture.id = TextureFromFile(str.C_Str(), directory, false);
+            texture.type = typeName;
+            texture.path = str.C_Str();
+
+            textures.push_back(texture);
+        }
     }
 
     return textures;

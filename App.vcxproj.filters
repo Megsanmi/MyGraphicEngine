@@ -410,8 +410,8 @@
     <None Include="lib\assimp\vector3.inl">
       <Filter>Файлы заголовков</Filter>
     </None>
-    <None Include="Shaders\fragment_shader.glsl" />
     <None Include="Shaders\vertex_shader.glsl" />
+    <None Include="Shaders\fragment_shader.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\assimp-vc143-mt.lib" />

@@ -31,12 +31,12 @@ namespace Renderer {
 		void process_input(GLFWwindow* window);
 
 		
-		
+		glm::vec3 m_position;
 	private:
 		void update_veiw_matrix();
 		void update_projection_matrix();
 
-		glm::vec3 m_position;
+		
 		glm::vec3 m_rotation;
 		ProjectionMode m_projection_mode;
 		glm::mat4 m_view_matrix;

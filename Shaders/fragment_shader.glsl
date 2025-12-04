@@ -4,6 +4,8 @@ in vec2 TexCoord;
 in vec3 frag_normal;
 in vec3 frag_position;
 in vec4 fragPosLightSpace;
+in mat3 TBN;
+
 
 out vec4 out_color;
 
@@ -11,18 +13,24 @@ uniform vec3 light_direction;
 uniform vec3 light_color;     
 uniform vec3 ambient_color;   
 uniform sampler2D ourTexture;
-uniform sampler2D shadowMap; 
-uniform bool isShaded;
+uniform sampler2D shadowMap;
+uniform sampler2D normalMap;
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+
+uniform bool isShaded;
+uniform bool UseNormalMap;
+
+
+
+float ShadowCalculation(vec4 fragPosLight)
 {
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLight.w;
     projCoords = projCoords * 0.5 + 0.5;
 
     if(projCoords.z > 1.0)
         return 0.0;
 
-    float bias = 0.005;
+    float bias = 0.0005;
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     for(int x = -1; x <= 1; ++x)
@@ -39,13 +47,18 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 }
 
 void main() {
-    vec3 N = normalize(frag_normal);
+    vec3 normal = texture(normalMap, TexCoord).xyz;
+    normal = normal * 2.0 - 1.0;
+    
+
+    vec3 N = UseNormalMap ? normal : normalize(frag_normal) ;
+
     vec3 L = normalize(-light_direction);
     float diff = 1.f;
-    if (isShaded) diff = max(dot(N, L), 0.0);
+    diff = max(dot(N, L), 0.0);
     
-    float shadow = 0;
-    if (isShaded) shadow = ShadowCalculation(fragPosLightSpace);
+    float shadow = isShaded ? ShadowCalculation(fragPosLightSpace) : 0.0f;
+    
     vec3 tex = texture(ourTexture, TexCoord).rgb;
 
     vec3 lighting = (ambient_color + (1.0 - shadow) * diff * light_color) * tex;

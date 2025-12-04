@@ -135,15 +135,12 @@ int main() {
     
 
     //вертикаьная синхр 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     Scene scene(shaderProgram);
 
     //Создаем карту теней
-    ShadowMap shadowMap(6000, 6000);
-    
-    /*Light light(scene.objects, shadowMap, shaderProgram);
-    light.planeH = 10000;
-    light.planeW = 10000;*/
+    ShadowMap shadowMap(1000, 1000);
+
     
     scene.Addobject("Light")->AddComponent<Light>(WIDTH,HEIGHT,scene.objects, shadowMap, shaderProgram);
     scene.Addobject("Sky_box")->AddComponent<MeshRenderer>("assets/sky.obj",shaderProgram)->isShaded =  false;
@@ -263,7 +260,8 @@ int main() {
         shaderProgram.setMatrix4("lightSpaceMatrix", shadowMap.getLightSpaceMatrix());
         shadowMap.bindDepthTexture(1);
         shaderProgram.setInt("shadowMap", 1);
-        
+        shaderProgram.setFloat("exposure", 1.0);
+        shaderProgram.setVec3("cameraPos", camera.m_position);
         for (auto& obj : scene.objects)
         {
             obj->Update(0.013);
