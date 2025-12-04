@@ -32,7 +32,7 @@ void Light::DrawShadowMap(glm::mat4 model, unsigned int texID)
     shaderprogram.use();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texID);
-    shaderprogram.setInt("shadowMap", 0);
+    
     shaderprogram.setMatrix4("model_matrix", model);
 
     glBindVertexArray(quadVAO);
