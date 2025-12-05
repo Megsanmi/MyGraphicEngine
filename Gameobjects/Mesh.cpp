@@ -67,7 +67,7 @@ void Mesh::Draw(Renderer::ShaderProgram& shader)
 
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
-    //unsigned int normalNr = 1;
+    unsigned int normalNr = 1;
     for (unsigned int i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i); 
@@ -78,7 +78,7 @@ void Mesh::Draw(Renderer::ShaderProgram& shader)
         else if (name == "texture_specular")
             number = std::to_string(specularNr++);
         //else if (name == "texture_normal")
-        //    number = std::to_string(normalNr++);
+            //number = std::to_string(normalNr++);
 
         shader.setInt(("material." + name + number).c_str(), i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
@@ -220,7 +220,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal", scene);
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-      /*  std::vector<Texture> diffuseMapsEmbended = loadMaterialTextures(material, aiTextureType_BASE_COLOR, "texture_diffuse", scene);
+        /*std::vector<Texture> diffuseMapsEmbended = loadMaterialTextures(material, aiTextureType_BASE_COLOR, "texture_diffuse", scene);
         textures.insert(textures.end(), diffuseMapsEmbended.begin(), diffuseMapsEmbended.end());*/
 
         std::vector<Texture> normalMapsEmbended = loadMaterialTextures(material, aiTextureType_NORMAL_CAMERA, "texture_normal", scene);
@@ -242,7 +242,18 @@ unsigned int TextureFromEmbedded(aiTexture* tex) {
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    unsigned char* data = stbi_load_from_memory((unsigned char*)tex->pcData, tex->mWidth, &width, &height, &nrComponents, 0);
+    unsigned char* data;
+    if (tex->mHeight == 0) {
+        // PNG/JPEG
+        data = stbi_load_from_memory((unsigned char*)tex->pcData, tex->mWidth, &width, &height, &nrComponents, 0);
+    }
+    else {
+        // RAW image
+        data = (unsigned char*)tex->pcData;
+        width = tex->mWidth;
+        height = tex->mHeight;
+        nrComponents = 4;
+    }
     if (!data)
     {
         data = stbi_load("assets/textures/default.jpg", &width, &height, &nrComponents, 0);
@@ -306,7 +317,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
             // встроенная текстура GLB
             int texIndex = atoi(str.C_Str() + 1);
             aiTexture* tex = scene->mTextures[texIndex];
-            texture.id = TextureFromEmbedded(tex);
+            //texture.id = TextureFromEmbedded(tex);
             texture.type = typeName;
             texture.path = "embedded";
 

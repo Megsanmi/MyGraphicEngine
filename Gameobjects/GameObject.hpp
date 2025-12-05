@@ -149,6 +149,7 @@ public:
     Renderer::ShaderProgram& shaderProgram;
     bool UseNormalMap = false;
     bool isShaded = true;
+    bool UseSolidColor = false;
 
     MeshRenderer(const std::string& modelPath, Renderer::ShaderProgram& shader) : path(modelPath), shaderProgram(shader){
         model = std::make_unique<Model>(path.c_str());
@@ -163,6 +164,7 @@ public:
         ImGui::Text("path", path.c_str());
         ImGui::Checkbox("isShaded", &isShaded);
         ImGui::Checkbox("UseNormalMap", &UseNormalMap);
+        ImGui::Checkbox("UseSolidColor", &UseSolidColor);
 
     };
 
@@ -190,6 +192,10 @@ public:
             shaderProgram.setMatrix4("model_matrix", gameObject->transform->GetMatrix());  
             shaderProgram.setBool("isShaded", isShaded);
             shaderProgram.setBool("UseNormalMap", UseNormalMap);
+            shaderProgram.setBool("UseSolidColor", UseSolidColor);
+            
+            
+
             model->Draw(shaderProgram);
         }
     }

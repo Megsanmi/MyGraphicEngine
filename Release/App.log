@@ -1,10 +1,16 @@
-﻿  Mesh.cpp
+﻿  light.cpp
 E:\Projects\Проект\App1\App\Renderer\ShaderProgram.h(34,58): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
-  (компиляция исходного файла "Gameobjects/Mesh.cpp")
+  (компиляция исходного файла "Renderer/light.cpp")
   
+  main.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.h(34,58): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
+  (компиляция исходного файла "main.cpp")
+  
+E:\Projects\Проект\App1\App\main.cpp(230,31): warning C4018: <: несоответствие типов со знаком и без знака
+E:\Projects\Проект\App1\App\main.cpp(267,25): warning C4305: аргумент: усечение из "double" в "float"
   Создание кода
-  27 of 4456 functions ( 0.6%) were compiled, the rest were copied from previous compilation.
+  9 of 4453 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    57 functions had inline decision re-evaluated but remain unchanged
+    58 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   App.vcxproj -> E:\Projects\Проект\App1\Release\MyEngine.exe

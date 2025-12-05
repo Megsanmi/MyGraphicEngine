@@ -104,6 +104,8 @@ void Light::drawShade(int width, int height)
 
     
     
+    shaderprogram.use();
+    
     DrawShadowMap(model, Shadowmap.getDepthTex());
 
     glActiveTexture(GL_TEXTURE0);
@@ -118,4 +120,5 @@ void Light::drawShade(int width, int height)
     shaderprogram.setVec3("light_color", color);
     shaderprogram.setVec3("ambient_color", ambient);
     
+    glActiveTexture(GL_TEXTURE0);
 }
