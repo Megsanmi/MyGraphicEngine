@@ -50,16 +50,16 @@ void main() {
     
 
     vec3 normal = texture(normalMap, TexCoord).xyz;
-    normal.y = -normal.y;
+    normal.y = normal.y;
     normal = normal * 2.0 - 1.0;
-    normal = normalize(TBN * normal);
+    normal = -normalize(TBN * normal);
 
     vec3 N = UseNormalMap ? normalize(normal) : normalize(frag_normal) ;
 
 
     vec3 L = normalize(-light_direction);
   
-    float diff =isShaded? max(dot(N, L), 0.0) : 1.f;
+    float diff =max(dot(N, L), 0.0) ;
     
     float shadow = isShaded ? ShadowCalculation(fragPosLightSpace) : 0.0f;
 

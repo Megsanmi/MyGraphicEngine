@@ -18,12 +18,17 @@ out mat3 TBN;
 
 
 void main() {
+
     fragPosLightSpace = lightSpaceMatrix * model_matrix * vec4(vertex_position, 1.0);
     gl_Position = view_projection_matrix * model_matrix * vec4(vertex_position, 1.0);
     
-    vec3 T = normalize(vec3(model_matrix * vec4(aTangent, 0.0)));
-    vec3 B = normalize(vec3(model_matrix * vec4(aBitangent, 0.0)));
-    vec3 N = normalize(vec3(model_matrix * vec4(aNormal, 0.0)));
+    mat4 NormalMatrix = inverse(transpose(model_matrix));
+
+    vec3 T = normalize(vec3(NormalMatrix * vec4(aTangent, 0.0)));
+    vec3 N = normalize(vec3(NormalMatrix * vec4(aNormal, 0.0)));
+
+    //float handedness = dot(cross(N, T), vec3(NormalMatrix * vec4(aBitangent, 0.0))) < 0.0 ? -1.0 : 1.0;
+    vec3 B = normalize(cross(N, T) * (dot(cross(N,T), aBitangent) < 0.0 ? -1.0 : 1.0)); 
 
     TBN = mat3(T,B,N);
 

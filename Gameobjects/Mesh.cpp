@@ -77,8 +77,8 @@ void Mesh::Draw(Renderer::ShaderProgram& shader)
             number = std::to_string(diffuseNr++);
         else if (name == "texture_specular")
             number = std::to_string(specularNr++);
-        //else if (name == "texture_normal")
-            //number = std::to_string(normalNr++);
+        else if (name == "texture_normal")
+            number = std::to_string(normalNr++);
 
         shader.setInt(("material." + name + number).c_str(), i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
@@ -195,16 +195,50 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
             vertex.Bitangent = glm::vec3(0, 1, 0);
         }
 
+
+
+
         vertices.push_back(vertex);
     }
-    // Обрабатываем индексы
+    
     for (unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
         aiFace face = mesh->mFaces[i];
         for (unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
-    // Обрабатываем материал
+   
+    for (size_t i = 0; i < indices.size(); i += 3)
+    {
+        Vertex& v0 = vertices[indices[i]];
+        Vertex& v1 = vertices[indices[i + 1]];
+        Vertex& v2 = vertices[indices[i + 2]];
+
+        glm::vec3 edge1 = v1.Position - v0.Position;
+        glm::vec3 edge2 = v2.Position - v0.Position;
+
+        glm::vec2 deltaUV1 = v1.TexCoords - v0.TexCoords;
+        glm::vec2 deltaUV2 = v2.TexCoords - v0.TexCoords;
+
+        float f = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
+        if (fabs(f) < 1e-6f) f = 1.0f;
+        else f = 1.0f / f;
+
+        glm::vec3 tangent;
+        tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+        tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+        glm::vec3 bitangent;
+        bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+        bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+        bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+        // Накопление для усреднения
+        v0.Tangent += tangent; v1.Tangent += tangent; v2.Tangent += tangent;
+        v0.Bitangent += bitangent; v1.Bitangent += bitangent; v2.Bitangent += bitangent;
+    }
+    
 
     if (mesh->mMaterialIndex >= 0)
     {
