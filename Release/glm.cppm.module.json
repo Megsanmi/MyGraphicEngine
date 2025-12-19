@@ -1,0 +1,22 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "Release\\glm.cppm.obj",
+            "outputs": [
+                "E:\\Projects\\Проект\\App1\\App\\Release\\vc143.pdb",
+                "Release\\",
+                "E:\\Projects\\Проект\\App1\\App\\Release\\glm.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "glm",
+                    "source-path": "e:\\projects\\проект\\app1\\app\\lib\\glm\\glm.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": []
+        }
+    ]
+}

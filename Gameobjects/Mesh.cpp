@@ -23,7 +23,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
 }
 void Mesh::setupMesh()
 {
-    glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &VAO) ;
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
 
@@ -63,11 +63,11 @@ void Mesh::setupMesh()
 }
 void Mesh::Draw(Renderer::ShaderProgram& shader)
 {
-    
 
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;
+
     for (unsigned int i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i); 
@@ -93,13 +93,42 @@ void Mesh::Draw(Renderer::ShaderProgram& shader)
     glBindVertexArray(0); 
 }
 
+void Mesh::SetUV(float u0, float v0, float u1, float v1)
+{
+    vertices[0].TexCoords = { u0, v1 };
+    vertices[1].TexCoords = { u1, v1 };
+    vertices[2].TexCoords = { u1, v0 };
+    vertices[3].TexCoords = { u0, v0 };
 
+    UpdateVBO();
+}
+void Mesh::UpdateVBO()
+{
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferSubData(
+        GL_ARRAY_BUFFER,
+        0,
+        vertices.size() * sizeof(Vertex),
+        vertices.data()
+    );
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 
 
 void Model::Draw(Renderer::ShaderProgram& shader)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
         meshes[i].Draw(shader);
+}
+
+
+
+void Model::SetUV(float u0, float v0, float u1, float v1)
+{
+    for (unsigned int i = 0; i < meshes.size(); i++)
+        meshes[i].SetUV(u0, v0, u1, v1);
 }
 
 void Model::loadModel(std::string path)
@@ -173,30 +202,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         }
         else vertex.TexCoords = glm::vec2(0.0f, 0.0f);
 
-        if (mesh->mTangents) {
-            vertex.Tangent = glm::vec3(
-                mesh->mTangents[i].x,
-                mesh->mTangents[i].y,
-                mesh->mTangents[i].z
-            );
-        }
-        else {
-            vertex.Tangent = glm::vec3(1, 0, 0);
-        }
-
-        if (mesh->mBitangents) {
-            vertex.Bitangent = glm::vec3(
-                mesh->mBitangents[i].x,
-                mesh->mBitangents[i].y,
-                mesh->mBitangents[i].z
-            );
-        }
-        else {
-            vertex.Bitangent = glm::vec3(0, 1, 0);
-        }
-
-
-
 
         vertices.push_back(vertex);
     }
@@ -234,7 +239,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
         bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
 
-        // Накопление для усреднения
+      
         v0.Tangent += tangent; v1.Tangent += tangent; v2.Tangent += tangent;
         v0.Bitangent += bitangent; v1.Bitangent += bitangent; v2.Bitangent += bitangent;
     }

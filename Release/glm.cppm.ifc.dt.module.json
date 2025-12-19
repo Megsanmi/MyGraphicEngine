@@ -1,0 +1,22 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "Release\\glm.obj",
+            "outputs": [
+                "Release\\glm.cppm.ifc.dt.module.json",
+                "Release\\glm.cppm.ifc.dt.d.json",
+                "Release\\glm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "glm",
+                    "source-path": "e:\\projects\\проект\\app1\\app\\lib\\glm\\glm.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": []
+        }
+    ]
+}

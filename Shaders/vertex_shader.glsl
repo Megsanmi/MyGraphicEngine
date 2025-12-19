@@ -8,18 +8,14 @@ layout(location = 4) in vec3 aBitangent;
 
 uniform mat4 model_matrix;
 uniform mat4 view_projection_matrix;
-uniform mat4 lightSpaceMatrix;
 
 out vec2 TexCoord;
 out vec3 frag_normal;
 out vec3 frag_position;
-out vec4 fragPosLightSpace;
 out mat3 TBN;
 
 
 void main() {
-
-    fragPosLightSpace = lightSpaceMatrix * model_matrix * vec4(vertex_position, 1.0);
     gl_Position = view_projection_matrix * model_matrix * vec4(vertex_position, 1.0);
     
     mat4 NormalMatrix = inverse(transpose(model_matrix));

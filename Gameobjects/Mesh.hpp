@@ -10,7 +10,7 @@
 #include "Texture.hpp"
 #include <glm/vec3.hpp>
 #include <glm/glm.hpp>
-#include "../Renderer/ShaderProgram.h"
+#include "../Renderer/ShaderProgram.hpp"
 class Mesh {
 public:
     // Mesh-данные
@@ -21,12 +21,15 @@ public:
     
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    void SetUV(float u0, float v0, float u1, float v1);
     void Draw(Renderer::ShaderProgram& shader);
+    void setupMesh();
+    void UpdateVBO();
+
+
 private:
     // Данные для рендеринга
     unsigned int VAO, VBO, EBO;
-
-    void setupMesh();
 };
 
 class Model
@@ -36,6 +39,15 @@ public:
     {
         loadModel(path);
     }
+
+    Model(std::vector<Vertex> vertices,
+        std::vector<unsigned int> indices,
+        std::vector<Texture> textures)
+    {
+        meshes.emplace_back(vertices, indices, textures);
+    }
+
+    void SetUV(float u0, float v0, float u1, float v1);
     void Draw(Renderer::ShaderProgram& shader);
 
     std::string name;
@@ -44,15 +56,18 @@ public:
     glm::vec3 rotationAxis{0,1,0};
     float rotationAngle = 0;
 
+    std::vector<Mesh> meshes;
+
+    unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma);
 private:
     
     // Данные модели
-    std::vector<Mesh> meshes;
+    
     std::string directory = "Assets";
     
     
 
-    unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma);
+    
 
     void loadModel(std::string path);
     void processNode(aiNode* node, const aiScene* scene);

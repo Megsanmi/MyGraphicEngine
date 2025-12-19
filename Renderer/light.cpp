@@ -1,15 +1,15 @@
 #include "light.hpp"
+#include "../Gameobjects/scene.hpp"
 
-
-Light::Light(int W, int H, std::vector<std::unique_ptr<GameObject>>& objects, ShadowMap& shadowmap, Renderer::ShaderProgram& s)
+Light::Light(int W, int H, std::vector<std::unique_ptr<GameObject>>& objects, Renderer::ShaderProgram& s)
     :m_objects(objects),
     shaderprogram(s),
-    Shadowmap(shadowmap),
+    Shadowmap(10000, 10000),
     WIDTH(W),
     HEIGHT(H)
 { 
 
-
+    
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &quadVBO);
 
@@ -25,6 +25,13 @@ Light::Light(int W, int H, std::vector<std::unique_ptr<GameObject>>& objects, Sh
 
     glBindVertexArray(0);
 
+
+}
+
+void Light::OnEnable()
+{
+    if (!gameObject || !gameObject->scene) return;
+    gameObject->scene->lights.push_back(this);
 }
 
 void Light::DrawShadowMap(glm::mat4 model, unsigned int texID)
@@ -39,7 +46,7 @@ void Light::DrawShadowMap(glm::mat4 model, unsigned int texID)
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 };
-void Light::drawShade(int width, int height)
+void Light::drawShade()
 {
     auto transform = gameObject->GetComponent<Transform>();
     if (!transform) return;
@@ -50,19 +57,19 @@ void Light::drawShade(int width, int height)
     float yaw = rotationEuler.y; 
     float pitch = rotationEuler.x;
 
-    glm::vec3 lightDir;
+ 
     lightDir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     lightDir.y = sin(glm::radians(pitch));
     lightDir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-    glm::vec3 lightPos = transform->position - lightDir * 100.f;
+    glm::vec3 lightPos = transform->position - lightDir * 500.f;
 
     glm::mat4 lightView = glm::lookAt(lightPos, lightPos + lightDir, { 0,1,0 });
     
 
     glm::mat4 lightProjection = glm::ortho(-planeW/2, planeW/2, -planeH/2, planeH/2, nearPlane, farPlane);
 
-    glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+    lightSpaceMatrix = lightProjection * lightView;
 
 
     glm::vec3 planePos = lightPos + lightDir * nearPlane;
@@ -78,47 +85,24 @@ void Light::drawShade(int width, int height)
         glm::vec4(0, 0, 0, 1)
     );
 
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos)
-        * rotation
-        * glm::scale(glm::mat4(1.0f), glm::vec3(planeW, planeH, 1.0f));
-
-
-
-
-
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos) * rotation * glm::scale(glm::mat4(1.0f), glm::vec3(planeW, planeH, 1.0f));
    
     Shadowmap.beginRender();
 
-    Shadowmap.setLightSpaceMatrix(lightSpaceMatrix);
+    
     
     for (auto& obj : m_objects)
     {
         auto mesh = obj->GetComponent<MeshRenderer>();
-        if (mesh && mesh->isShaded)
-            mesh->Draw(Shadowmap.getShader());
+        if (mesh && mesh->isShaded) mesh->Draw(Shadowmap.getShader());
             
     }
   
-    Shadowmap.endRender(width, height);
+    Shadowmap.endRender(WIDTH, HEIGHT);
 
-
-    
-    
-    shaderprogram.use();
-    
-    DrawShadowMap(model, Shadowmap.getDepthTex());
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, Shadowmap.getDepthTex());
-    
+    Shadowmap.setLightSpaceMatrix(lightSpaceMatrix);
 
     shaderprogram.use();
-
     
-    shaderprogram.setMatrix4("lightSpaceMatrix", lightSpaceMatrix);
-    shaderprogram.setVec3("light_direction", lightDir);
-    shaderprogram.setVec3("light_color", color);
-    shaderprogram.setVec3("ambient_color", ambient);
-    
-    glActiveTexture(GL_TEXTURE0);
+    if (drawPlane) DrawShadowMap(model, Shadowmap.getDepthTex());
 }

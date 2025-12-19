@@ -7,7 +7,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "Renderer/ShaderProgram.h"
+#include "Renderer/ShaderProgram.hpp"
 #include "Renderer/camera.hpp"
 #include "Renderer/light.hpp"
 #include "Renderer/ShadowMap.hpp"
@@ -26,6 +26,7 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "Gameobjects/scene.hpp"
+#include "Gameobjects/sprite.hpp"
 
 
 
@@ -130,24 +131,23 @@ int main() {
     // Подключаем GLFW + OpenGL3 backend
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
-    
-
-    
 
     //вертикаьная синхр 
     glfwSwapInterval(1);
-    Scene scene(shaderProgram);
+    Scene scene(WIDTH, HEIGHT, shaderProgram);
+    scene.LoadScene();
+   
+    GameObject* L = scene.Addobject("LIGHT");
+    L->AddComponent<Light>(WIDTH, HEIGHT, scene.objects, shaderProgram);
 
-    //Создаем карту теней
-    ShadowMap shadowMap(1000, 1000);
+    GameObject* S = scene.Addobject("sprite");
+    S->AddComponent<Sprite>(shaderProgram);
+    L->AddChild(S);
 
-    
-    scene.Addobject("Light")->AddComponent<Light>(WIDTH,HEIGHT,scene.objects, shadowMap, shaderProgram);
-    scene.Addobject("Sky_box")->AddComponent<MeshRenderer>("assets/sky.obj",shaderProgram)->isShaded =  false;
 
-    // Главный цикл приложения
     double lastTime = glfwGetTime();
     int nbFrames = 0;
+
     while (!glfwWindowShouldClose(window)) {
         
         //очистка окнна
@@ -157,15 +157,13 @@ int main() {
 
         camera.set_projection_mode(perspective_camera ? Renderer::Camera::ProjectionMode::Perspective : Renderer::Camera::ProjectionMode::Orthographic);
         shaderProgram.setMatrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
-        
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
         double currentTime = glfwGetTime();
         nbFrames++;
-        
-       
 
         if (currentTime - lastTime >= 1.0) { 
             std::cout << "FPS: " << nbFrames << std::endl;
@@ -182,14 +180,8 @@ int main() {
             if (ImGui::BeginMenu("Color settings"))
             {
                 ImGui::Text("Background color:");
-                /*ImGui::ColorEdit3("##background_color", window_color);
-                ImGui::Text("Global light color:");
-                ImGui::ColorEdit3("##global_light_color", &light.color.x);
-                ImGui::Text("Light pitch, yaw:");
-                ImGui::SliderFloat("##global_light_pitch", &light.pitch, - 180, 180);
-                ImGui::SliderFloat("##global_light_yaw", &light.yaw, -180, 180);
-                ImGui::DragFloat3("##position", &light.position.x, 0.1);
-                */
+                ImGui::ColorEdit3("##background_color", window_color);
+             
                 ImGui::EndMenu();
             }
 
@@ -209,8 +201,10 @@ int main() {
                     std::cout << "Created object: " << Objpath << std::endl;
 
                 }
-
-
+                if (ImGui::Button("add light"))
+                {
+                   
+                }
                 if (ImGui::Button("Save scene"))
                 {
                     scene.SaveScene();
@@ -241,31 +235,28 @@ int main() {
         ImGui::End();
         
         ImGui::Begin("Inspector");  
-
+      ;
         if (selectedObjectIndex >= 0)
         {
+
             auto& obj = scene.objects[selectedObjectIndex];
 
             //ImGui::InputText("Object: %s", &obj->name);
+            if (ImGui::Button("Delete object"))
+            {
+                scene.DeleteObject(selectedObjectIndex);
+            }
             ImGui::Separator();
 
             obj->drawInspector();
+
         }
 
         ImGui::End();
 
-
-        //light.drawShade(WIDTH, HEIGH);
-    
-        shaderProgram.setMatrix4("lightSpaceMatrix", shadowMap.getLightSpaceMatrix());
-        shadowMap.bindDepthTexture(1);
-        shaderProgram.setInt("shadowMap", 1);
-        shaderProgram.setFloat("exposure", 1.0);
         shaderProgram.setVec3("cameraPos", camera.m_position);
-        for (auto& obj : scene.objects)
-        {
-            obj->Update(0.013);
-        }
+
+        scene.Update(1.0/nbFrames);
         
         if (escape) 
         {

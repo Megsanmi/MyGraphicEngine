@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include "../Renderer/ShaderProgram.h"
+#include "../Renderer/ShaderProgram.hpp"
 
 class ShadowMap 
 {
