@@ -12,6 +12,7 @@ out vec4 out_color;
 uniform vec3 light_directions[MAX_LIGHTS]; 
 uniform vec3 light_color;     
 uniform vec3 ambient_color;   
+uniform vec3 solidColor = vec3(0.5,0.5,0.5); 
 uniform sampler2D ourTexture;
 uniform sampler2D normalMap;
 
@@ -35,7 +36,8 @@ float ShadowCalculation(int lightIndex, vec3 normal)
     if (projCoords.z > 1.0)
         return 0.0;
 
-    float bias = max(0.0005 * (1.0 - dot(normal, normalize(-light_directions[lightIndex]))), 0.0005);
+    //float bias = max(0.0005 * (1.0 - dot(normal, normalize(-light_directions[lightIndex]))), 0.0005);
+    float bias = 0.00005;
 
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMaps[lightIndex], 0);
@@ -72,7 +74,7 @@ void main() {
 
 
     vec3 tex = texture(ourTexture, TexCoord).rgb;
-    if (UseSolidColor) tex = vec3(0.5,0.5,0.5);
+    if (UseSolidColor) tex = solidColor;
 
     vec3 lighting = light_color * tex;
     for (int i = 0; i <lightCount;i++)

@@ -3,43 +3,57 @@
 
 #include <glm/vec3.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
+#include "../Gameobjects/scene.hpp"
 
 struct GLFWwindow;
 
-namespace Renderer {
-	class Camera
+
+class Camera : public Component
+{
+public:
+	bool perspective_camera = true;
+	bool escape = false;
+	Transform* T;
+
+	enum class ProjectionMode
 	{
-	public:
-		enum class ProjectionMode
-		{
-			Perspective,
-			Orthographic
+		Perspective,
+		Orthographic
 
-		};
-		Camera(const glm::vec3& position = { 0,0,0 },
-			const glm::vec3& rotation = { 0,0,0 },
-			const ProjectionMode m_projection_mode = ProjectionMode::Perspective);
-
-		void set_position(const glm::vec3& position);
-		void set_rotation(const glm::vec3& rotation);
-		void set_position_rotation(const glm::vec3& position, const glm::vec3& rotation);
-		glm::mat4 get_view_matrix() const { return  m_view_matrix; }
-		glm::mat4 get_projection_matrix() const { return m_projection_matrix; }
-
-
-		void set_projection_mode(const ProjectionMode projection_mode);
-		void process_input(GLFWwindow* window);
-
-		
-		glm::vec3 m_position;
-	private:
-		void update_veiw_matrix();
-		void update_projection_matrix();
-
-		
-		glm::vec3 m_rotation;
-		ProjectionMode m_projection_mode;
-		glm::mat4 m_view_matrix;
-		glm::mat4 m_projection_matrix;
 	};
-}
+	Camera(Renderer::ShaderProgram& s, const ProjectionMode m_projection_mode = ProjectionMode::Perspective);
+
+	void Update(float dt);
+	void OnEnable();
+	void drawInspector()
+	{
+		if (ImGui::CollapsingHeader("Camera"))
+		{
+			ImGui::DragFloat("speed", &speed, 0.05);
+		}
+	}
+	json Serialize() override;
+	void Deserialize(const json& j) override;
+
+	void set_position(const glm::vec3& position);
+	void set_rotation(const glm::vec3& rotation);
+	void set_position_rotation(const glm::vec3& position, const glm::vec3& rotation);
+	glm::mat4 get_view_matrix() const { return  m_view_matrix; }
+	glm::mat4 get_projection_matrix() const { return m_projection_matrix; }
+
+
+	void set_projection_mode(const ProjectionMode projection_mode);
+	void process_input(GLFWwindow* window);
+
+
+
+private:
+	void update_veiw_matrix();
+	void update_projection_matrix();
+	float speed = 1.f;
+		
+	Renderer::ShaderProgram& shader;
+	ProjectionMode m_projection_mode;
+	glm::mat4 m_view_matrix;
+	glm::mat4 m_projection_matrix;
+};

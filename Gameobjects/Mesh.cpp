@@ -102,6 +102,7 @@ void Mesh::SetUV(float u0, float v0, float u1, float v1)
 
     UpdateVBO();
 }
+
 void Mesh::UpdateVBO()
 {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -119,6 +120,7 @@ void Mesh::UpdateVBO()
 
 void Model::Draw(Renderer::ShaderProgram& shader)
 {
+    shader.setBool("UseSolidColor", useSolidColor);
     for (unsigned int i = 0; i < meshes.size(); i++)
         meshes[i].Draw(shader);
 }
@@ -259,9 +261,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal", scene);
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-        /*std::vector<Texture> diffuseMapsEmbended = loadMaterialTextures(material, aiTextureType_BASE_COLOR, "texture_diffuse", scene);
-        textures.insert(textures.end(), diffuseMapsEmbended.begin(), diffuseMapsEmbended.end());*/
-
         std::vector<Texture> normalMapsEmbended = loadMaterialTextures(material, aiTextureType_NORMAL_CAMERA, "texture_normal", scene);
         textures.insert(textures.end(), normalMapsEmbended.begin(), normalMapsEmbended.end());
     
@@ -293,10 +292,6 @@ unsigned int TextureFromEmbedded(aiTexture* tex) {
         height = tex->mHeight;
         nrComponents = 4;
     }
-    if (!data)
-    {
-        data = stbi_load("assets/textures/default.jpg", &width, &height, &nrComponents, 0);
-    }
     if (data)
     {
         GLenum format = GL_RGB;
@@ -321,6 +316,7 @@ unsigned int TextureFromEmbedded(aiTexture* tex) {
     else
     {
         stbi_image_free(data);
+        
     }
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR)
@@ -334,15 +330,9 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 
     unsigned int count = mat->GetTextureCount(type);
 
-    //если текстур нет то ставим дефолтную
     if (count == 0 && typeName == "texture_diffuse")
     {
-        Texture texture;
-        texture.id = TextureFromFile("assets/textures/default.jpg", "", false);
-        texture.type = typeName;
-        texture.path = "default.jpg";
-        textures.push_back(texture);
-        return textures;
+        useSolidColor = true;
     }
 
     for (unsigned int i = 0; i < count; i++)
@@ -353,7 +343,6 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
         Texture texture;
         
         if (str.C_Str()[0] == '*') {
-            // встроенная текстура GLB
             int texIndex = atoi(str.C_Str() + 1);
             aiTexture* tex = scene->mTextures[texIndex];
             //texture.id = TextureFromEmbedded(tex);

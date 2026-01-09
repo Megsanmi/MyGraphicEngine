@@ -27,22 +27,24 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include "Gameobjects/scene.hpp"
 #include "Gameobjects/sprite.hpp"
+#include "Gameobjects/particle.hpp"
 
-
+#include "Gameobjects/RigidBody.hpp"
+#include "Gameobjects/Terrain.hpp"
 
 
 //Настройки окна
 int WIDTH = 1920;
 int HEIGHT = 1024;
-float window_color[3] = {0.5f,0.5f,0.5f };
+float window_color[3] = {0.f,0.f,0.f };
 float light_color[3] = { 0.6f,0.6f,0.6f };
 float rlight_dir[3] = { 1.0f, -1.0f, -1.0f };
 
 //Настройки камеры
 bool perspective_camera = true;
 bool perspective_light = true;
-Renderer::Camera camera;
-bool escape = false;
+
+
 
 std::string vertex_shader = "NO VERTEX SHADER";
 std::string fragment_shader = "NO FRAGMENT SHADER";
@@ -77,9 +79,6 @@ int main() {
     else {
         std::cerr << "cant open file fragment_shader.glsl!" << std::endl;
     }
-
-
-
 
     // 1. Инициализация GLFW
     if (!glfwInit()) {
@@ -134,17 +133,11 @@ int main() {
 
     //вертикаьная синхр 
     glfwSwapInterval(1);
+
     Scene scene(WIDTH, HEIGHT, shaderProgram);
+    scene.window = window;
     scene.LoadScene();
-   
-    GameObject* L = scene.Addobject("LIGHT");
-    L->AddComponent<Light>(WIDTH, HEIGHT, scene.objects, shaderProgram);
-
-    GameObject* S = scene.Addobject("sprite");
-    S->AddComponent<Sprite>(shaderProgram);
-    L->AddChild(S);
-
-
+    
     double lastTime = glfwGetTime();
     int nbFrames = 0;
 
@@ -155,8 +148,8 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);        
 
-        camera.set_projection_mode(perspective_camera ? Renderer::Camera::ProjectionMode::Perspective : Renderer::Camera::ProjectionMode::Orthographic);
-        shaderProgram.setMatrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
+        
+        
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -177,11 +170,12 @@ int main() {
         if (ImGui::BeginMainMenuBar())
         {
 
-            if (ImGui::BeginMenu("Color settings"))
+            if (ImGui::BeginMenu("settings"))
             {
                 ImGui::Text("Background color:");
                 ImGui::ColorEdit3("##background_color", window_color);
-             
+                ImGui::Checkbox("perspective ",&perspective_camera);
+                
                 ImGui::EndMenu();
             }
 
@@ -191,8 +185,7 @@ int main() {
                 ImGui::InputText("##Path", Objpath, IM_ARRAYSIZE(Objpath));
                 ImGui::Text("Object name:");
                 ImGui::InputText("##gile_name", nameobj, IM_ARRAYSIZE(nameobj));
-                
-                
+               
                 if (ImGui::Button("Add object"))
                 {
                     auto obj = scene.Addobject(nameobj);
@@ -201,14 +194,12 @@ int main() {
                     std::cout << "Created object: " << Objpath << std::endl;
 
                 }
-                if (ImGui::Button("add light"))
-                {
-                   
-                }
+
                 if (ImGui::Button("Save scene"))
                 {
                     scene.SaveScene();
                 }
+
                 if (ImGui::Button("Load scene"))
                 {
                     scene.LoadScene();
@@ -254,27 +245,21 @@ int main() {
 
         ImGui::End();
 
-        shaderProgram.setVec3("cameraPos", camera.m_position);
-
-        scene.Update(1.0/nbFrames);
         
-        if (escape) 
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            camera.process_input(window);
-        }
-        else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        {
-            escape = false;
-        }
-        if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS)
-        {
-            escape = true;
-        }
+      
+        scene.Update(0.013);
         
+        
+        
+        
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        {
+            GameObject* obj = scene.Addobject("Cube");
+            obj->AddComponent<MeshRenderer>("assets/Cube.obj", shaderProgram);
+
+            obj->GetComponent<Transform>()->position = vec3(30, 40, 40);
+            obj->AddComponent<RigidBody>(1.f);
+        }
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

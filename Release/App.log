@@ -1,50 +1,10 @@
 ﻿  Проверка источников на наличие зависимостей модуля…
-  main.cpp
-E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(34,58): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
-  (компиляция исходного файла "main.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\GameObject.hpp(275,10): warning C4244: инициализация: преобразование "float" в "int", возможна потеря данных
-  (компиляция исходного файла "main.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\GameObject.hpp(277,30): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
-  (компиляция исходного файла "main.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\GameObject.hpp(294,30): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
-  (компиляция исходного файла "main.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\scene.hpp(24,20): warning C4018: <: несоответствие типов со знаком и без знака
-  (компиляция исходного файла "main.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\scene.hpp(49,26): warning C4018: >=: несоответствие типов со знаком и без знака
-  (компиляция исходного файла "main.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\sprite.hpp(65,18): warning C4305: +=: усечение из "double" в "float"
-  (компиляция исходного файла "main.cpp")
-  
-E:\Projects\Проект\App1\App\main.cpp(224,31): warning C4018: <: несоответствие типов со знаком и без знака
-E:\Projects\Проект\App1\App\main.cpp(259,25): warning C4244: аргумент: преобразование "double" в "float", возможна потеря данных
-  light.cpp
-E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(34,58): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
-  (компиляция исходного файла "Renderer/light.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\GameObject.hpp(275,10): warning C4244: инициализация: преобразование "float" в "int", возможна потеря данных
-  (компиляция исходного файла "Renderer/light.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\GameObject.hpp(277,30): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
-  (компиляция исходного файла "Renderer/light.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\GameObject.hpp(294,30): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
-  (компиляция исходного файла "Renderer/light.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\scene.hpp(24,20): warning C4018: <: несоответствие типов со знаком и без знака
-  (компиляция исходного файла "Renderer/light.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\scene.hpp(49,26): warning C4018: >=: несоответствие типов со знаком и без знака
-  (компиляция исходного файла "Renderer/light.cpp")
-  
+  RigidBody.cpp
+  RigidBody.hpp
+Release\RigidBody.obj : warning LNK4042: объект указан более одного раза; лишние не учитываются
   Создание кода
-  4 of 4836 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  10 of 5537 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    59 functions had inline decision re-evaluated but remain unchanged
+    304 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   App.vcxproj -> E:\Projects\Проект\App1\Release\MyEngine.exe

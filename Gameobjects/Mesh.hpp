@@ -17,7 +17,7 @@ public:
     std::vector<Vertex>       vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture>      textures;
-    
+   
     
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
@@ -25,19 +25,27 @@ public:
     void Draw(Renderer::ShaderProgram& shader);
     void setupMesh();
     void UpdateVBO();
-
-
-private:
-    // Данные для рендеринга
+    
     unsigned int VAO, VBO, EBO;
+private:
+        
 };
 
-class Model
+class Model 
 {
 public:
+    std::vector<Mesh> meshes;
+    bool useSolidColor = false;  
+
+    Model() {}
     Model(std::string path)
     {
         loadModel(path);
+    }
+
+    Model(Mesh& mesh)
+    {
+        meshes.emplace_back(mesh);
     }
 
     Model(std::vector<Vertex> vertices,
@@ -56,7 +64,6 @@ public:
     glm::vec3 rotationAxis{0,1,0};
     float rotationAngle = 0;
 
-    std::vector<Mesh> meshes;
 
     unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma);
 private:

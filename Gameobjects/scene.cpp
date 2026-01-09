@@ -1,0 +1,239 @@
+#include "scene.hpp"
+
+#define NodeArray BulletNodeArray
+#include <btBulletDynamicsCommon.h>
+#undef NodeArray
+
+#include "../Renderer/light.hpp"
+#include "../Renderer/camera.hpp"
+#include "RigidBody.hpp"
+#include "Terrain.hpp"
+#include "particle.hpp"
+
+Scene::Scene(int w, int h, Renderer::ShaderProgram& shaderProgram) : GlobalShaderProgram(shaderProgram), width(w), height(h)
+{
+	InitPhysics();
+}
+
+void Scene::shadowRender()
+{
+	for (unsigned int i = 0;i < lights.size(); i++)
+	{
+
+		lights[i]->Shadowmap.bindDepthTexture(lights[i]->Shadowmap.getDepthTex());
+		GlobalShaderProgram.setMatrix4(("lightSpaceMatrices[" + std::to_string(i) + "]").c_str(), lights[i]->getLightSpaceMatrix());
+		GlobalShaderProgram.setInt("shadowMaps[" + std::to_string(i) + "]", lights[i]->Shadowmap.getDepthTex());
+		GlobalShaderProgram.setVec3("light_directions[" + std::to_string(i) + "]", lights[i]->lightDir);
+		GlobalShaderProgram.setVec3("light_color", lights[i]->color);
+		GlobalShaderProgram.setVec3("ambient_color", lights[i]->ambient);
+		GlobalShaderProgram.setInt("lightCount", lights.size());
+
+	};
+}
+
+GameObject* Scene::Addobject(const string name)
+{
+	auto obj = std::make_unique<GameObject>(name);
+	GameObject* ptr = obj.get();
+
+	obj->scene = this;
+
+	objects.push_back(std::move(obj));
+
+	return ptr; 
+}
+void Scene::DeleteObject(int index)
+{
+	if (index < 0 || index >= objects.size()) return;
+	auto object = objects[index].get();
+
+	if (auto lightComp = object->GetComponent<Light>()) {
+		lights.erase(std::remove(lights.begin(), lights.end(), lightComp), lights.end());
+	}
+
+	auto obj = std::remove_if(objects.begin(), objects.end(), [object](const std::unique_ptr<GameObject>& o) { return o.get() == object; });
+	objects.erase(obj, objects.end());
+
+}
+
+void Scene::Update(float dt)
+{
+	
+	for (auto& obj : objects)
+	{
+		if (auto rb = obj->GetComponent<RigidBody>())
+		{
+			rb->SyncTransformToPhysics();
+
+		}
+	}
+	
+	dynamicsWorld->stepSimulation(dt, 10);
+	for (auto& obj : objects)
+	{
+		if (auto rb = obj->GetComponent<RigidBody>())
+		{
+			rb->SyncTransformFromPhysics();
+			rb->body->activate();
+		}
+	}
+	shadowRender();
+	for (auto& obj : objects)
+	{
+
+		if (auto light = obj->GetComponent<Light>())
+		{
+			obj->GetComponent<Light>()->drawShade();
+		}
+
+	}
+
+	for (auto& obj : objects)
+	{
+		obj->Update(dt);
+
+	}
+
+}
+
+
+void Scene::InitPhysics()
+{
+	collisionConfig = new btDefaultCollisionConfiguration();
+	dispatcher = new btCollisionDispatcher(collisionConfig);
+	broadphase = new btDbvtBroadphase();
+	solver = new btSequentialImpulseConstraintSolver();
+	dynamicsWorld = new btDiscreteDynamicsWorld(
+		dispatcher, broadphase, solver, collisionConfig
+	);
+
+	dynamicsWorld->setGravity(btVector3(0, -9.81f, 0));
+}
+
+json Scene::SaveScene()
+{
+	json scene;
+	for (auto& obj : objects) {
+		json jObj;
+		jObj["name"] = obj->name;
+
+		for (auto& c : obj->components)
+		{
+			json jComp = c->Serialize();
+
+			jObj["components"].push_back(jComp);
+		};
+
+		scene["objects"].push_back(jObj);
+	};
+	ofstream ofs("scene.json");
+	ofs << scene.dump();
+	return scene;
+}
+
+void Scene::LoadScene() {
+	clear();
+	ifstream file("scene.json");
+	json j;
+	file >> j;
+
+	std::vector<std::unique_ptr<GameObject>> scene;
+
+	for (auto& obj : j["objects"]) {
+
+		objects.push_back(LoadGameObject(obj));
+		
+	}
+	
+
+}
+void Scene::clear()
+{
+	// 1. Удаляем физику
+	if (dynamicsWorld)
+	{
+		for (int i = dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
+		{
+			btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
+			btRigidBody* body = btRigidBody::upcast(obj);
+
+			if (body && body->getMotionState())
+				delete body->getMotionState();
+
+			dynamicsWorld->removeCollisionObject(obj);
+			delete obj;
+		}
+	}
+
+	lights.clear();
+	objects.clear();
+
+	
+}
+std::unique_ptr<GameObject> Scene::LoadGameObject(const json& j)
+{
+
+	string name = j["name"];
+
+
+	auto obj = std::make_unique<GameObject>(name);
+	obj->scene = this;
+	for (auto& c : j["components"]) {
+		string type = c["type"];
+
+		
+		if (type == "Transform")
+		{
+			Transform* t = obj->GetComponent<Transform>(); //создается по умолчанию
+			t->Deserialize(c);
+			t->OnEnable();
+		}
+
+		else if (type == "MeshRenderer" && !obj->GetComponent<MeshRenderer>())
+		{
+			MeshRenderer* mr = obj->AddComponent<MeshRenderer>(c["path"], GlobalShaderProgram);
+			mr->Deserialize(c);
+			mr->OnEnable();
+		}
+		else if (type == "Light")
+		{
+			Light* L = obj->AddComponent<Light>(width, height, objects, GlobalShaderProgram);
+			L->Deserialize(c);
+			//L->OnEnable();
+		}
+		else if (type == "Terrain")
+		{
+			Terrain* T = obj->AddComponent<Terrain>(GlobalShaderProgram);
+			T->Deserialize(c);
+			T->OnEnable();
+		}
+
+		else if (type == "Collider" && !obj->GetComponent<Collider>())
+		{
+			Collider* T = obj->AddComponent<Collider>();
+			T->Deserialize(c);
+
+		}
+
+		else if (type == "RigidBody")
+		{
+			RigidBody* T = obj->AddComponent<RigidBody>();
+			T->Deserialize(c);
+		}
+		else if (type == "Camera")
+		{
+			Camera* T = obj->AddComponent<Camera>(GlobalShaderProgram);
+			T->Deserialize(c);
+			T->OnEnable();
+		}
+		else if (type == "ParticleSystem")
+		{
+			ParticleSystem* T = obj->AddComponent<ParticleSystem>(GlobalShaderProgram);
+			T->Deserialize(c);
+			T->OnEnable();
+		}
+	}
+	if (obj->GetComponent<Camera>())
+		camera = obj->GetComponent<Transform>();
+	return obj;
+}
