@@ -19,6 +19,9 @@ struct TerrainChunk {
 
 class Terrain : public Component {
 public:
+    bool enabled = true;
+    bool lastEnabled = true;
+
     siv::PerlinNoise noise{ 123u };
     Model* terrainModel = nullptr;
     MeshRenderer* meshRenderer = nullptr;

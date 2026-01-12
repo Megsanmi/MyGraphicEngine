@@ -1,3 +1,4 @@
+E:\Projects\Проект\App1\App\Gameobjects\DebugDraw.cpp;E:\Projects\Проект\App1\App\Release\DebugDraw.obj
 E:\Projects\Проект\App1\App\Gameobjects\DebugDraw.hpp;E:\Projects\Проект\App1\App\Release\DebugDraw.obj
 E:\Projects\Проект\App1\App\Gameobjects\particle.cpp;E:\Projects\Проект\App1\App\Release\particle.obj
 E:\Projects\Проект\App1\App\Gameobjects\RigidBody.cpp;E:\Projects\Проект\App1\App\Release\RigidBody.obj
@@ -21,3 +22,4 @@ E:\Projects\Проект\App1\App\Renderer\camera.cpp;E:\Projects\Проект\A
 E:\Projects\Проект\App1\App\Renderer\light.cpp;E:\Projects\Проект\App1\App\Release\light.obj
 E:\Projects\Проект\App1\App\Renderer\ShaderProgram.cpp;E:\Projects\Проект\App1\App\Release\ShaderProgram.obj
 E:\Projects\Проект\App1\App\Renderer\ShadowMap.cpp;E:\Projects\Проект\App1\App\Release\ShadowMap.obj
+E:\Projects\Проект\App1\App\scripts\player.cpp;E:\Projects\Проект\App1\App\Release\player.obj

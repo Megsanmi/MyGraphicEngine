@@ -3,6 +3,7 @@
 #include "GameObject.hpp"
 #include "json.hpp"
 #include <fstream>
+#include "DebugDraw.hpp"
 
 class Light;
 class btDefaultCollisionConfiguration;
@@ -17,6 +18,7 @@ class Scene {
 public:
 	Renderer::ShaderProgram& GlobalShaderProgram;//глобальный шейдер для сцены(по надобности можно сделать несколько шейдеров)
 	GLFWwindow* window;
+	MyDebugDrawer* debugDrawer;
 
 	std::vector<std::unique_ptr<GameObject>> objects;
 	std::vector<Light*> lights;

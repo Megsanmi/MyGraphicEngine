@@ -24,10 +24,14 @@ class Collider;
 class RigidBody : public Component
 {
 public:
+
+
     btRigidBody* body = nullptr;
     Collider* collider = nullptr;
     btDefaultMotionState* motionState = nullptr;
     
+    bool physicsCreated = false;
+
     float mass = 1.0f;
     BodyType bodyType = BodyType::Dynamic;
 
@@ -41,13 +45,19 @@ public:
 
     void Update(float dt) override;
 
-    void SyncTransformFromPhysics();
-    void SyncTransformToPhysics();
-    void ApplyBodyType();
-    void OnColliderChanged();
-    void SetMass(float newMass);
-
     void drawInspector();
+    
+    void SyncTransformFromPhysics();
+    
+    void SyncTransformToPhysics();
+
+    void TryCreatePhysics();
+    
+    void ApplyBodyType();
+    
+    void OnColliderChanged();
+
+    void SetMass(float newMass);
 
 private:
     const char* bodyTypeNames[3] = { "Static", "Dynamic", "Kinematic" };
@@ -57,14 +67,16 @@ class Collider : public Component
 {
 public:
     ColliderType type = ColliderType::Box;
+    vec3 center = { 0,0,0 };
 
-    // Параметры формы
-    glm::vec3 size = { 1, 1, 1 }; // Box
-    float radius = 0.5f;        // Sphere / Capsule
-    float height = 1.0f;        // Capsule
+    glm::vec3 size = { 1, 1, 1 }; 
+    float radius = 0.5f;        
+    float height = 1.0f;        
 
+    bool drawColision = false;
+    
     btCollisionShape* shape = nullptr;
-
+    void Update(float dt);
     void OnEnable() override;
     void OnDisable() override;
 

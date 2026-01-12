@@ -1,6 +1,5 @@
 #include "RigidBody.hpp"
-
-
+#include "../Renderer/camera.hpp"
 
 RigidBody::RigidBody(float m) : mass(m)
 {
@@ -8,47 +7,35 @@ RigidBody::RigidBody(float m) : mass(m)
 
 void RigidBody::OnEnable()
 {
-    if (gameObject->GetComponent<Collider>())
-    {
-        collider = gameObject->GetComponent<Collider>();
-    }
-    else collider = gameObject->AddComponent<Collider>();
-
-    Scene* scene = gameObject->scene;
-    Transform* t = gameObject->GetComponent<Transform>();
-    if (!t) return;
-   
-    btTransform startTransform;
-    startTransform.setIdentity();
-    startTransform.setOrigin(btVector3(t->position.x, t->position.y, t->position.z));
-
-   
-    motionState = new btDefaultMotionState(startTransform);
-
-    btVector3 inertia(0, 0, 0);
-    if (mass > 0)
-        collider->shape->calculateLocalInertia(mass, inertia);
-
-    btRigidBody::btRigidBodyConstructionInfo info(mass, motionState, collider->shape, inertia);
-    body = new btRigidBody(info);
-
-    ApplyBodyType();
-
-    scene->dynamicsWorld->addRigidBody(body);
+    TryCreatePhysics();
 }
+
 void RigidBody::OnDisable()
 {
+    if (!physicsCreated)
+        return;
 
+    Scene* scene = gameObject->scene;
+    if (scene && body)
+        scene->dynamicsWorld->removeRigidBody(body);
+
+    delete body;
+    delete motionState;
+
+    body = nullptr;
+    motionState = nullptr;
+    physicsCreated = false;
 }
 
 void RigidBody::Update(float dt)
 {
-    SyncTransformFromPhysics();
+    
 }
 
 void RigidBody::SyncTransformFromPhysics()
 {
     if (!body || !body->getMotionState()) return;
+    if (!physicsCreated) return;
 
     btTransform trans;
     body->getMotionState()->getWorldTransform(trans);
@@ -66,6 +53,8 @@ void RigidBody::SyncTransformFromPhysics()
 
 void RigidBody::SyncTransformToPhysics()
 {
+    if (!physicsCreated) return;
+
     if (!body) return;
     Transform* t = gameObject->GetComponent<Transform>();
     if (!t) return;
@@ -87,9 +76,45 @@ void RigidBody::SyncTransformToPhysics()
         collider->shape->setLocalScaling(btVector3(t->scale.x, t->scale.y, t->scale.z));
 }
 
+void RigidBody::TryCreatePhysics()
+{
+    if (physicsCreated) return;
+
+    
+    collider = gameObject->GetComponent<Collider>();
+    if (!collider || !collider->shape)
+        return; 
+    
+    Scene* scene = gameObject->scene;
+    Transform* t = gameObject->GetComponent<Transform>();
+    if (!scene || !t)
+        return;
+
+    btTransform startTransform;
+    startTransform.setIdentity();
+    startTransform.setOrigin(btVector3(t->position.x, t->position.y, t->position.z));
+
+    motionState = new btDefaultMotionState(startTransform);
+
+    btVector3 inertia(0, 0, 0);
+    if (mass > 0)
+        collider->shape->calculateLocalInertia(mass, inertia);
+
+    btRigidBody::btRigidBodyConstructionInfo info(mass, motionState, collider->shape, inertia);
+    body = new btRigidBody(info);
+
+    ApplyBodyType();
+
+    scene->dynamicsWorld->addRigidBody(body);
+    
+    physicsCreated = true;
+}
+
+
 void RigidBody::ApplyBodyType()
 {
     if (!body) return;
+    
 
     int flags = body->getCollisionFlags();
     flags &= ~(btCollisionObject::CF_STATIC_OBJECT | btCollisionObject::CF_KINEMATIC_OBJECT);
@@ -124,6 +149,7 @@ void RigidBody::ApplyBodyType()
 
 void RigidBody::OnColliderChanged()
 {
+  
     if (!body || !collider || !collider->shape)
         return;
 
@@ -141,6 +167,7 @@ void RigidBody::OnColliderChanged()
 }
 void RigidBody::SetMass(float newMass)
 {
+    
     mass = newMass;
     if (bodyType == BodyType::Dynamic && body && collider->shape)
     {
@@ -163,9 +190,9 @@ json RigidBody::Serialize()
 void RigidBody::Deserialize(const json& j) {
     mass = j["mass"];
     bodyType = j["bodyType"];
+    
+    ApplyBodyType();
 }
-
-
 
 void RigidBody::drawInspector()
 {
@@ -187,9 +214,35 @@ void RigidBody::drawInspector()
     }
 }
 
+void Collider::Update(float dt)
+{
+    if (drawColision)
+    {
+        gameObject->scene->GlobalShaderProgram.setVec3("solidColor", glm::vec3(0, 1, 0));
+        gameObject->scene->GlobalShaderProgram.setMatrix4("model_matrix", glm::mat4(1));
+        if (gameObject->GetComponent<RigidBody>())
+        {
+            btTransform trans = gameObject->GetComponent<RigidBody>()->body->getWorldTransform();
+            gameObject->scene->dynamicsWorld->debugDrawObject(trans, gameObject->GetComponent<RigidBody>()->body->getCollisionShape(), btVector3(1, 0, 0));
+
+            gameObject->scene->debugDrawer->render(gameObject->scene->camera->gameObject->GetComponent<Camera>()->get_projection_matrix(), gameObject->scene->camera->gameObject->GetComponent<Camera>()->get_view_matrix());
+        }
+        gameObject->scene->GlobalShaderProgram.setVec3("solidColor", glm::vec3(0.5, 0.5, 0.5));
+    }
+
+}
+
 void Collider::OnEnable()
 {
     RebuildShape();
+
+    if (auto rb = gameObject->GetComponent<RigidBody>())
+    {
+        //rb->collider = this;
+        rb->TryCreatePhysics();
+        rb->OnColliderChanged();
+    }
+        
 }
 
 void Collider::OnDisable()
@@ -201,10 +254,11 @@ void Collider::OnDisable()
 json Collider::Serialize()
 {
     return{
-        {"type","Colider"},
+        {"type","Collider"},
         {"size",{size.x,size.y,size.z}},
+        {"center",{center.x,center.y,center.z}},
         {"height",height},
-        {"type",type},
+        {"typeShape",type},
         {"radius",radius}
     };
 };
@@ -212,45 +266,48 @@ json Collider::Serialize()
 void Collider::Deserialize(const json& j)
 {
     size = glm::vec3(j["size"][0], j["size"][1], j["size"][2]);
+    center = glm::vec3(j["center"][0], j["center"][1], j["center"][2]);
     height = j["height"];
-    type = j["type"];
+    type = j["typeShape"];
     radius = j["radius"];
-}
 
+    RebuildShape();
+}
 
 void Collider::RebuildShape()
 {
-    if (shape)
+    
+    if (shape) {
         delete shape;
+    }
 
+  
     switch (type)
     {
     case ColliderType::Box:
-        shape = new btBoxShape(btVector3(
-            size.x * 0.5f,
-            size.y * 0.5f,
-            size.z * 0.5f
-        ));
+        shape = new btBoxShape(btVector3(size.x * 0.5f, size.y * 0.5f, size.z * 0.5f));
         break;
-
     case ColliderType::Sphere:
         shape = new btSphereShape(radius);
         break;
-
     case ColliderType::Capsule:
         shape = new btCapsuleShape(radius, height);
         break;
     }
 
-    if (auto rb = gameObject->GetComponent<RigidBody>())
-    {
-        rb->OnColliderChanged();
+  
+    if (gameObject) {
+        if (auto rb = gameObject->GetComponent<RigidBody>()) {
+            rb->OnColliderChanged();
+        }
     }
 }
+
 
 void Collider::drawInspector()
 {
     if (!ImGui::CollapsingHeader("Collider")) return;
+    ImGui::Checkbox("Draw collider", &drawColision);
 
     int current = (int)type;
     if (ImGui::Combo("Shape", &current, "Box\0Sphere\0Capsule\0"))
@@ -262,21 +319,35 @@ void Collider::drawInspector()
     switch (type)
     {
     case ColliderType::Box:
-        if (ImGui::DragFloat3("Size", &size.x, 0.1f))
-            RebuildShape();
-        break;
-
-    case ColliderType::Sphere:
-        if (ImGui::DragFloat("Radius", &radius, 0.05f))
-            RebuildShape();
-        break;
-
-    case ColliderType::Capsule:
+    {
         bool changed = false;
-        changed |= ImGui::DragFloat("Radius", &radius, 0.05f);
-        changed |= ImGui::DragFloat("Height", &height, 0.05f);
+        changed |= ImGui::DragFloat3("Size", &size.x, 0.05f);
+        //changed |= ImGui::DragFloat3("Offset", &center.x, 0.05f);
         if (changed)
             RebuildShape();
         break;
+    }
+
+    case ColliderType::Sphere:
+    {
+        bool changed = false;
+        changed |= ImGui::DragFloat("Radius", &radius, 0.05f);
+        //changed |= ImGui::DragFloat3("Offset", &center.x, 0.05f);
+        if (changed)
+            RebuildShape();
+        break;
+    }
+
+    case ColliderType::Capsule:
+    {
+        bool changed = false;
+        changed |= ImGui::DragFloat("Radius", &radius, 0.05f);
+        changed |= ImGui::DragFloat("Height", &height, 0.05f);
+        //changed |= ImGui::DragFloat3("Offset", &center.x, 0.05f);
+        if (changed)
+            RebuildShape();
+        break;
+    }
+
     }
 }

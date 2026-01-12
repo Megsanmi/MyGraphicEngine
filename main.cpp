@@ -1,7 +1,5 @@
 ﻿#include <glad/glad.h>
 
-
-
 #include <GLFW/glfw3.h> 
 #include <iostream> 
 #include <fstream>
@@ -31,6 +29,8 @@
 
 #include "Gameobjects/RigidBody.hpp"
 #include "Gameobjects/Terrain.hpp"
+#include "Gameobjects/DebugDraw.hpp"
+#include "scripts/player.hpp"
 
 
 //Настройки окна
@@ -123,7 +123,6 @@ int main() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-    
 
     ImGui::StyleColorsDark();
 
@@ -141,15 +140,17 @@ int main() {
     double lastTime = glfwGetTime();
     int nbFrames = 0;
 
+
+    
+
     while (!glfwWindowShouldClose(window)) {
         
         //очистка окнна
+
         glClearColor(window_color[0],window_color[1], window_color[2], 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);        
 
-        
-        
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -163,9 +164,7 @@ int main() {
             nbFrames = 0;
             lastTime += 1.0;
         }
-
-        // Тут окна
-        
+      
         static int selectedObjectIndex = -1;
         if (ImGui::BeginMainMenuBar())
         {
@@ -226,7 +225,7 @@ int main() {
         ImGui::End();
         
         ImGui::Begin("Inspector");  
-      ;
+
         if (selectedObjectIndex >= 0)
         {
 
@@ -241,25 +240,49 @@ int main() {
 
             obj->drawInspector();
 
+            if (ImGui::Button("Add Component"))
+                ImGui::OpenPopup("AddComponentPopup");
+
+            if (ImGui::BeginPopup("AddComponentPopup"))
+            {
+                if (ImGui::Selectable("MeshRenderer"))
+                {
+                    obj->AddComponent<MeshRenderer>("/path", scene.GlobalShaderProgram);
+                }
+
+                if (ImGui::Selectable("RigidBody"))
+                {
+                    obj->AddComponent<RigidBody>();
+                }
+                if (ImGui::Selectable("Collider"))  
+                {
+                    Collider* T = obj->AddComponent<Collider>();
+                }
+                if (ImGui::Selectable("Light"))
+                {
+                    Light* L = obj->AddComponent<Light>(scene.objects, scene.GlobalShaderProgram);
+                }
+                if (ImGui::Selectable("Terrain"))
+                {
+                    Terrain* T = obj->AddComponent<Terrain>(scene.GlobalShaderProgram);
+                }
+                if (ImGui::Selectable("ParticleSystem"))
+                {
+                    ParticleSystem* T = obj->AddComponent<ParticleSystem>(scene.GlobalShaderProgram);
+                }
+                if (ImGui::Selectable("CharacterController"))
+                {
+                    CharacterController* T = obj->AddComponent<CharacterController>();
+                }
+                
+
+                ImGui::EndPopup();
+            }
         }
 
         ImGui::End();
 
-        
-      
         scene.Update(0.013);
-        
-        
-        
-        
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        {
-            GameObject* obj = scene.Addobject("Cube");
-            obj->AddComponent<MeshRenderer>("assets/Cube.obj", shaderProgram);
-
-            obj->GetComponent<Transform>()->position = vec3(30, 40, 40);
-            obj->AddComponent<RigidBody>(1.f);
-        }
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

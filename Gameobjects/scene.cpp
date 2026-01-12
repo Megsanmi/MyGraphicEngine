@@ -3,12 +3,14 @@
 #define NodeArray BulletNodeArray
 #include <btBulletDynamicsCommon.h>
 #undef NodeArray
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
 #include "../Renderer/light.hpp"
 #include "../Renderer/camera.hpp"
 #include "RigidBody.hpp"
 #include "Terrain.hpp"
 #include "particle.hpp"
+#include "../scripts/player.hpp"
 
 Scene::Scene(int w, int h, Renderer::ShaderProgram& shaderProgram) : GlobalShaderProgram(shaderProgram), width(w), height(h)
 {
@@ -17,17 +19,17 @@ Scene::Scene(int w, int h, Renderer::ShaderProgram& shaderProgram) : GlobalShade
 
 void Scene::shadowRender()
 {
+	GlobalShaderProgram.use();
+	GlobalShaderProgram.setInt("lightCount", lights.size());
+
 	for (unsigned int i = 0;i < lights.size(); i++)
 	{
-
 		lights[i]->Shadowmap.bindDepthTexture(lights[i]->Shadowmap.getDepthTex());
 		GlobalShaderProgram.setMatrix4(("lightSpaceMatrices[" + std::to_string(i) + "]").c_str(), lights[i]->getLightSpaceMatrix());
 		GlobalShaderProgram.setInt("shadowMaps[" + std::to_string(i) + "]", lights[i]->Shadowmap.getDepthTex());
 		GlobalShaderProgram.setVec3("light_directions[" + std::to_string(i) + "]", lights[i]->lightDir);
 		GlobalShaderProgram.setVec3("light_color", lights[i]->color);
 		GlobalShaderProgram.setVec3("ambient_color", lights[i]->ambient);
-		GlobalShaderProgram.setInt("lightCount", lights.size());
-
 	};
 }
 
@@ -69,15 +71,21 @@ void Scene::Update(float dt)
 	}
 	
 	dynamicsWorld->stepSimulation(dt, 10);
+
 	for (auto& obj : objects)
 	{
 		if (auto rb = obj->GetComponent<RigidBody>())
 		{
 			rb->SyncTransformFromPhysics();
-			rb->body->activate();
+			if (rb->body)
+			{
+				rb->body->activate();
+			}
 		}
 	}
+
 	shadowRender();
+	
 	for (auto& obj : objects)
 	{
 
@@ -91,9 +99,8 @@ void Scene::Update(float dt)
 	for (auto& obj : objects)
 	{
 		obj->Update(dt);
-
 	}
-
+	camera->gameObject->GetComponent<Camera>()->UpdateCam(0.13);
 }
 
 
@@ -107,7 +114,13 @@ void Scene::InitPhysics()
 		dispatcher, broadphase, solver, collisionConfig
 	);
 
+	broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
+	
 	dynamicsWorld->setGravity(btVector3(0, -9.81f, 0));
+
+	debugDrawer = new MyDebugDrawer(GlobalShaderProgram);
+	debugDrawer->init();
+	dynamicsWorld->setDebugDrawer(debugDrawer);
 }
 
 json Scene::SaveScene()
@@ -133,6 +146,9 @@ json Scene::SaveScene()
 
 void Scene::LoadScene() {
 	clear();
+
+	InitPhysics();
+	
 	ifstream file("scene.json");
 	json j;
 	file >> j;
@@ -193,13 +209,12 @@ std::unique_ptr<GameObject> Scene::LoadGameObject(const json& j)
 		{
 			MeshRenderer* mr = obj->AddComponent<MeshRenderer>(c["path"], GlobalShaderProgram);
 			mr->Deserialize(c);
-			mr->OnEnable();
 		}
+
 		else if (type == "Light")
 		{
-			Light* L = obj->AddComponent<Light>(width, height, objects, GlobalShaderProgram);
+			Light* L = obj->AddComponent<Light>(objects, GlobalShaderProgram);
 			L->Deserialize(c);
-			//L->OnEnable();
 		}
 		else if (type == "Terrain")
 		{
@@ -211,6 +226,12 @@ std::unique_ptr<GameObject> Scene::LoadGameObject(const json& j)
 		else if (type == "Collider" && !obj->GetComponent<Collider>())
 		{
 			Collider* T = obj->AddComponent<Collider>();
+			T->Deserialize(c);
+
+		}
+		else if (type == "CharacterController" && !obj->GetComponent<CharacterController>())
+		{
+			CharacterController* T = obj->AddComponent<CharacterController>();
 			T->Deserialize(c);
 
 		}

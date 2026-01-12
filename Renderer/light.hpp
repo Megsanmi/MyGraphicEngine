@@ -31,10 +31,11 @@ public:
 	int HEIGHT = 1024;
 
 	bool drawPlane = false;
-	Light(int W,int H,std::vector<std::unique_ptr<GameObject>>& objects, Renderer::ShaderProgram& s);
+	Light(std::vector<std::unique_ptr<GameObject>>& objects, Renderer::ShaderProgram& s);
+	~Light();
 
 	void OnEnable();
-	
+	void OnDisable();
 	void drawShade();
 
 	void DrawShadowMap(glm::mat4 model,unsigned int texID);
@@ -44,6 +45,7 @@ public:
 		
 		if (ImGui::CollapsingHeader("Light"))
 		{
+			ImGui::Checkbox("enabled", &enabled);
 			ImGui::DragFloat2("shadow zone: ", &planeW, 0.1f);
 			ImGui::ColorEdit3("Color light", &color.x);
 			ImGui::Checkbox("Draw shadow plane", &drawPlane);

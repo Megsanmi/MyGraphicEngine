@@ -1,34 +1,38 @@
 #pragma once
 
-
 #include <glm/vec3.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include "../Gameobjects/scene.hpp"
 
 struct GLFWwindow;
 
-
 class Camera : public Component
 {
 public:
+	
 	bool perspective_camera = true;
 	bool escape = false;
+
 	Transform* T;
 
 	enum class ProjectionMode
 	{
 		Perspective,
 		Orthographic
-
 	};
 	Camera(Renderer::ShaderProgram& s, const ProjectionMode m_projection_mode = ProjectionMode::Perspective);
 
-	void Update(float dt);
+	void UpdateCam(float dt);
+
 	void OnEnable();
+	void OnDisable();
+	
+
 	void drawInspector()
 	{
 		if (ImGui::CollapsingHeader("Camera"))
 		{
+			ImGui::Checkbox("enabled", &enabled);
 			ImGui::DragFloat("speed", &speed, 0.05);
 		}
 	}

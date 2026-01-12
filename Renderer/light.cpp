@@ -1,15 +1,28 @@
 #include "light.hpp"
 #include "../Gameobjects/scene.hpp"
 
-Light::Light(int W, int H, std::vector<std::unique_ptr<GameObject>>& objects, Renderer::ShaderProgram& s)
+Light::Light(std::vector<std::unique_ptr<GameObject>>& objects, Renderer::ShaderProgram& s)
     :m_objects(objects),
     shaderprogram(s),
-    Shadowmap(10000, 10000),
-    WIDTH(W),
-    HEIGHT(H)
+    Shadowmap(10000, 10000)
 { 
 
+}
+
+Light::~Light() {
+    OnDisable();
+    glDeleteVertexArrays(1, &quadVAO);
+    glDeleteBuffers(1, &quadVBO);
+
     
+}
+
+void Light::OnEnable()
+{
+
+    WIDTH = gameObject->scene->width;
+    HEIGHT = gameObject->scene->height;
+
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &quadVBO);
 
@@ -25,15 +38,16 @@ Light::Light(int W, int H, std::vector<std::unique_ptr<GameObject>>& objects, Re
 
     glBindVertexArray(0);
 
-
-}
-
-void Light::OnEnable()
-{
     if (!gameObject || !gameObject->scene) return;
     gameObject->scene->lights.push_back(this);
 }
+void Light::OnDisable()
+{
+    if (!gameObject || !gameObject->scene) return;
+    auto& lights = gameObject->scene->lights;
+    lights.erase(std::remove(lights.begin(), lights.end(), this), lights.end());
 
+};
 void Light::DrawShadowMap(glm::mat4 model, unsigned int texID)
 {
     shaderprogram.use();

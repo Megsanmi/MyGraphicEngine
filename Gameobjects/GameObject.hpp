@@ -24,23 +24,39 @@ using namespace nlohmann;
 class GameObject; 
 class Scene;
 
-//Базовый класс для всез компонентов
+//Базовый класс для всех компонентов
 //позволяет в одном векторе компонентов хранить любые типы этих компонентов
 //является родителем для всех компонентов
+
 class Component {
 public:
+    bool enabled = true;
+    bool lastEnabled = true;
+
     GameObject* gameObject = nullptr;
     virtual ~Component() {}
     virtual void Start() {}
     virtual void OnEnable() {}
     virtual void OnDisable() {}
     virtual void Update(float dt) {}
-    virtual json Serialize() //функция сохранения состояния и настроек из компонента 
-    {
-        return {};
-    }
+    virtual json Serialize() { return {}; }
     virtual void Deserialize(const json& j) {}  //их загрузка 
     virtual void drawInspector() {}
+    void syncEnabledState() {
+        if (enabled != lastEnabled)
+        {
+            if (enabled) OnEnable();
+            else OnDisable();
+
+            lastEnabled = enabled;
+        }
+    }
+
+    struct ComponentFactory {
+        std::string name; // имя для UI
+        std::function<Component* (GameObject*)> createFunc; // функция создания компонента
+    };
+
 };
 
 
@@ -144,9 +160,13 @@ public:
     T* AddComponent(Args&&... args)
     {
         T* c = new T(forward<Args>(args)...);
+
         c->gameObject = this;
-        c->OnEnable();
+
         components.emplace_back(c);
+        if (c->enabled) {
+            c->OnEnable();
+        }
         return c;
     }
 
@@ -161,7 +181,11 @@ public:
 
     void Update(float dt) {
         for (auto& c : components)
-            c->Update(dt);
+        {
+            c->syncEnabledState();
+
+            if (c->enabled) c->Update(dt);
+        }
     }
 
     void drawInspector()
@@ -178,9 +202,13 @@ public:
 
 class MeshRenderer : public Component {
 public:
+  
+
     Model* model = nullptr;
+    vec3 meshOffset = vec3{ 0,0,0 };
     std::string path;
     Renderer::ShaderProgram& shaderProgram;
+
     bool UseNormalMap = false;
     bool isShaded = true;
     bool UseSolidColor = false;
@@ -201,18 +229,23 @@ public:
         model->SetUV(u0, v0, u1, v1);
     }
 
+    void OnEnable() {};
+
+    void OnDisable() {};
+
     void Update(float dt) {
         Draw(shaderProgram);
     }
-
 
 
     void drawInspector()
     {
         if (ImGui::CollapsingHeader("MeshRenderer"))
         {
+            ImGui::Checkbox("enabled", &enabled);
             ImGui::Text("path", path.c_str());
             ImGui::Checkbox("isShaded", &isShaded);
+            ImGui::DragFloat3("Offset", &meshOffset.x,0.05);
             ImGui::Checkbox("UseNormalMap", &UseNormalMap);
             ImGui::Checkbox("UseSolidColor", &UseSolidColor);
         }
@@ -224,15 +257,16 @@ public:
             {"type","MeshRenderer"},
             {"path",path},
             {"isShaded",isShaded},
-            { "UseNormalMap",UseNormalMap
- }
+            {"meshOffset",{meshOffset.x,meshOffset.y,meshOffset.z} },
+            { "UseNormalMap",UseNormalMap}
         };
     };
 
     void Deserialize(const json& j) override {
         std::string pathj = j["path"];
         path = pathj;
-        model =new Model(path.c_str());
+        meshOffset = glm::vec3(j["meshOffset"][0], j["meshOffset"][1], j["meshOffset"][2]);
+        //model =new Model(path.c_str());
         isShaded = j["isShaded"];
     }
 
@@ -240,7 +274,10 @@ public:
         if (model) {
 
             shaderProgram.use();
-            shaderProgram.setMatrix4("model_matrix", gameObject->transform->GetMatrix());
+
+            mat4 modelMatrix = glm::translate(gameObject->transform->GetMatrix(), meshOffset);
+
+            shaderProgram.setMatrix4("model_matrix", modelMatrix);
             shaderProgram.setBool("isShaded", isShaded);
             shaderProgram.setBool("UseNormalMap", UseNormalMap);
             shaderProgram.setBool("UseSolidColor", UseSolidColor);

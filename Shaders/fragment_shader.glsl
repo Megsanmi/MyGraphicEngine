@@ -12,7 +12,7 @@ out vec4 out_color;
 uniform vec3 light_directions[MAX_LIGHTS]; 
 uniform vec3 light_color;     
 uniform vec3 ambient_color;   
-uniform vec3 solidColor = vec3(0.5,0.5,0.5); 
+uniform vec3 solidColor = vec3(0.5,0.5,0.5);
 uniform sampler2D ourTexture;
 uniform sampler2D normalMap;
 

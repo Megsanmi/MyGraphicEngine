@@ -24,6 +24,8 @@
     <ClCompile Include="Gameobjects\scene.cpp" />
     <ClCompile Include="Gameobjects\Terrain.cpp" />
     <ClCompile Include="Gameobjects\DebugDraw.hpp" />
+    <ClCompile Include="Gameobjects\DebugDraw.cpp" />
+    <ClCompile Include="scripts\player.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Gameobjects\GameObject.hpp" />

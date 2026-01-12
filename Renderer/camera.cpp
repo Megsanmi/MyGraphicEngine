@@ -13,7 +13,7 @@ Camera::Camera(Renderer::ShaderProgram& s, const ProjectionMode projection_mod)
 	
 }
 
-void Camera::Update(float dt)
+void Camera::UpdateCam(float dt)
 {
 	
 	if (escape)
@@ -43,18 +43,24 @@ void Camera::OnEnable()
 {
 	T = gameObject->GetComponent<Transform>();
 }
+void Camera::OnDisable()
+{
+
+};
 json Camera::Serialize()
 {
 	return{
 			{"type","Camera"},
-			{"m_projection_mode",m_projection_mode}
+			{"m_projection_mode",m_projection_mode},
+			{"speed",speed}
 	};
 	
 	
 }
 void Camera::Deserialize(const json& j)
 {
-	m_projection_mode = j["m_projection_mode"];
+	if (j.contains("m_projection_mode"))m_projection_mode = j["m_projection_mode"];
+	if (j.contains("speed"))speed = j["speed"];
 }
 
 

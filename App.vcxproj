@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Gameobjects\DebugDraw.cpp" />
     <ClCompile Include="Gameobjects\DebugDraw.hpp" />
     <ClCompile Include="Gameobjects\particle.cpp" />
     <ClCompile Include="Gameobjects\RigidBody.cpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="Renderer\light.cpp" />
     <ClCompile Include="Renderer\ShaderProgram.cpp" />
     <ClCompile Include="Renderer\ShadowMap.cpp" />
+    <ClCompile Include="scripts\player.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Gameobjects\GameObject.hpp" />
