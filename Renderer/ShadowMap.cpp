@@ -4,8 +4,8 @@
 #include <sstream>
 #include <iostream>
 
-ShadowMap::ShadowMap(unsigned int width, unsigned int height)
-	: width(width), height(height)
+ShadowMap::ShadowMap(Renderer::ShaderProgram& s,unsigned int width, unsigned int height)
+	: width(width), height(height), depthShader(s)
 {
     // Создаём FBO и depth texture
     glGenFramebuffers(1, &depthMapFBO);
@@ -25,45 +25,12 @@ ShadowMap::ShadowMap(unsigned int width, unsigned int height)
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Загружаем depth шейдер
-
-    const char* vsBuffer = R"(
-    #version 460
-
-    layout(location = 0) in vec3 vertex_position;
-
-    uniform mat4 model_matrix;
-    uniform mat4 lightSpaceMatrix;
-
-    void main()
-    {
-        gl_Position = lightSpaceMatrix * model_matrix * vec4(vertex_position, 1.0);
-    }
-    )";
-    const char* fsBuffer = R"(
-    #version 460
-
-    void main()
-    {
-        
-    }   
-    )";
-    
-    depthShader = new Renderer::ShaderProgram(vsBuffer, fsBuffer);
-
-    
-
-
-
 }
 
 ShadowMap::~ShadowMap()
 {
     glDeleteTextures(1, &depthMapTex);
     glDeleteFramebuffers(1, &depthMapFBO);
-    delete depthShader;
-
 }
 
 void ShadowMap::beginRender()
@@ -71,8 +38,8 @@ void ShadowMap::beginRender()
     glViewport(0, 0, width, height);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
-    depthShader->use();
-    depthShader->setMatrix4("lightSpaceMatrix", lightSpaceMatrix);
+    depthShader.use();
+    depthShader.setMatrix4("lightSpaceMatrix", lightSpaceMatrix);
 }
 
 void ShadowMap::endRender(unsigned int screenWidth, unsigned int screenHeight)

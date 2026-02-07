@@ -98,5 +98,11 @@ namespace Renderer {
 		if (loc != -1)
 			glUniform3f(loc, value.x, value.y, value.z);
 	}
+	void ShaderProgram::setVec4(const std::string& name, const glm::vec4& value)
+	{
+		GLint loc = glGetUniformLocation(this->m_ID, name.c_str());
+		if (loc != -1)
+			glUniform4f(loc, value.x, value.y, value.z,value.w);
+	}
 }
 

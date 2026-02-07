@@ -21,6 +21,7 @@ namespace Renderer {
 		ShaderProgram(ShaderProgram&& shaderProgram) noexcept;
 		void setMatrix4(const char* name, const glm::mat4& matrix) const;
 		void setVec3(const std::string& name, const glm::vec3& value);
+		void setVec4(const std::string& name, const glm::vec4& value);
 
 		void setInt(const std::string& name, int value) {
 			glUniform1i(glGetUniformLocation(m_ID, name.c_str()), value);

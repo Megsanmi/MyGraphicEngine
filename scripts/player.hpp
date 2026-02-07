@@ -132,8 +132,6 @@ public:
         }
     }
 
-
-
     void TryCreatePhysics() {
         if (physicsCreated || !collider) return;
         auto scene = gameObject->scene;

@@ -16,11 +16,11 @@ void RigidBody::OnDisable()
         return;
 
     Scene* scene = gameObject->scene;
-    if (scene && body)
+    if (scene && scene->dynamicsWorld && body)
         scene->dynamicsWorld->removeRigidBody(body);
 
-    delete body;
-    delete motionState;
+    if (body) delete body;
+    if (motionState) delete motionState;
 
     body = nullptr;
     motionState = nullptr;
@@ -29,70 +29,86 @@ void RigidBody::OnDisable()
 
 void RigidBody::Update(float dt)
 {
-    
+
 }
 
 void RigidBody::SyncTransformFromPhysics()
 {
-    if (!body || !body->getMotionState()) return;
-    if (!physicsCreated) return;
+    if (!body || !body->getMotionState() || !physicsCreated) return;
 
     btTransform trans;
     body->getMotionState()->getWorldTransform(trans);
 
     Transform* t = gameObject->GetComponent<Transform>();
-    t->position = glm::vec3(
-        trans.getOrigin().x(),
-        trans.getOrigin().y(),
-        trans.getOrigin().z()
-    );
+    if (!t) return;
 
-    btQuaternion rot = trans.getRotation();
-    t->qrotation = glm::quat(rot.getW(), rot.getX(), rot.getY(), rot.getZ());
+    // Получаем мировую матрицу из Bullet
+    float m[16];
+    trans.getOpenGLMatrix(m);
+    glm::mat4 worldMatPhysics = glm::make_mat4(m);
+
+    if (gameObject->parent)
+    {
+        // Вычисляем локальную матрицу: Local = Inverse(ParentWorld) * CurrentWorld
+        glm::mat4 parentWorldMat = gameObject->parent->GetWorldMatrix();
+        glm::mat4 localMat = glm::inverse(parentWorldMat) * worldMatPhysics;
+
+        // Извлекаем позицию и вращение из локальной матрицы
+        t->position = glm::vec3(localMat[3]);
+        t->qrotation = glm::quat_cast(localMat);
+    }
+    else
+    {
+        // Если родителя нет, мировая позиция из Bullet — это и есть локальная позиция
+        t->position = glm::vec3(trans.getOrigin().x(), trans.getOrigin().y(), trans.getOrigin().z());
+        btQuaternion rot = trans.getRotation();
+        t->qrotation = glm::quat(rot.getW(), rot.getX(), rot.getY(), rot.getZ());
+    }
 }
 
 void RigidBody::SyncTransformToPhysics()
 {
-    if (!physicsCreated) return;
+    if (!physicsCreated || !body) return;
 
-    if (!body) return;
     Transform* t = gameObject->GetComponent<Transform>();
     if (!t) return;
 
+    // Получаем полную мировую матрицу (с учетом всей иерархии родителей)
+    glm::mat4 worldMat = gameObject->GetWorldMatrix();
+
     btTransform trans;
-    trans.setIdentity();
-    trans.setOrigin(btVector3(t->position.x, t->position.y, t->position.z));
+    trans.setFromOpenGLMatrix(glm::value_ptr(worldMat));
 
-    btQuaternion rot(t->qrotation.x, t->qrotation.y, t->qrotation.z, t->qrotation.w);
-    trans.setRotation(rot);
-
-    
-    if (body->getMotionState()) body->getMotionState()->setWorldTransform(trans);
+    // Обновляем состояние движения и само тело в Bullet
+    if (body->getMotionState())
+        body->getMotionState()->setWorldTransform(trans);
 
     body->setWorldTransform(trans);
-    
 
-    if (collider->shape)
-        collider->shape->setLocalScaling(btVector3(t->scale.x, t->scale.y, t->scale.z));
+    // Синхронизируем масштаб коллайдера
+    if (collider && collider->shape)
+    {
+        body->getCollisionShape()->setLocalScaling(btVector3(t->scale.x, t->scale.y, t->scale.z));
+    }
 }
 
 void RigidBody::TryCreatePhysics()
 {
     if (physicsCreated) return;
 
-    
     collider = gameObject->GetComponent<Collider>();
     if (!collider || !collider->shape)
-        return; 
-    
+        return;
+
     Scene* scene = gameObject->scene;
     Transform* t = gameObject->GetComponent<Transform>();
     if (!scene || !t)
         return;
 
+    // Начальная позиция в мире
+    glm::mat4 worldMat = gameObject->GetWorldMatrix();
     btTransform startTransform;
-    startTransform.setIdentity();
-    startTransform.setOrigin(btVector3(t->position.x, t->position.y, t->position.z));
+    startTransform.setFromOpenGLMatrix(glm::value_ptr(worldMat));
 
     motionState = new btDefaultMotionState(startTransform);
 
@@ -106,17 +122,15 @@ void RigidBody::TryCreatePhysics()
     ApplyBodyType();
 
     scene->dynamicsWorld->addRigidBody(body);
-    
     physicsCreated = true;
 }
-
 
 void RigidBody::ApplyBodyType()
 {
     if (!body) return;
-    
 
     int flags = body->getCollisionFlags();
+    // Сбрасываем старые флаги
     flags &= ~(btCollisionObject::CF_STATIC_OBJECT | btCollisionObject::CF_KINEMATIC_OBJECT);
 
     switch (bodyType)
@@ -136,7 +150,7 @@ void RigidBody::ApplyBodyType()
     case BodyType::Dynamic:
     {
         btVector3 inertia(0, 0, 0);
-        if (mass > 0 && collider->shape)
+        if (mass > 0 && collider && collider->shape)
             collider->shape->calculateLocalInertia(mass, inertia);
         body->setMassProps(mass, inertia);
         body->setActivationState(ACTIVE_TAG);
@@ -149,7 +163,6 @@ void RigidBody::ApplyBodyType()
 
 void RigidBody::OnColliderChanged()
 {
-  
     if (!body || !collider || !collider->shape)
         return;
 
@@ -165,11 +178,11 @@ void RigidBody::OnColliderChanged()
         body->updateInertiaTensor();
     }
 }
+
 void RigidBody::SetMass(float newMass)
 {
-    
     mass = newMass;
-    if (bodyType == BodyType::Dynamic && body && collider->shape)
+    if (bodyType == BodyType::Dynamic && body && collider && collider->shape)
     {
         btVector3 inertia(0, 0, 0);
         if (mass > 0)
@@ -179,18 +192,20 @@ void RigidBody::SetMass(float newMass)
     }
 }
 
-json RigidBody::Serialize() 
+json RigidBody::Serialize()
 {
-    return{
-        {"type","RigidBody"},
-        {"mass",mass},
-        {"bodyType",bodyType}
+    return {
+        {"type", "RigidBody"},
+        {"mass", mass},
+        {"bodyType", (int)bodyType} // Приводим к int для корректного сохранения enum
     };
-};
-void RigidBody::Deserialize(const json& j) {
-    mass = j["mass"];
-    bodyType = j["bodyType"];
-    
+}
+
+void RigidBody::Deserialize(const json& j)
+{
+    mass = j.value("mass", 1.0f);
+    bodyType = (BodyType)j.value("bodyType", 0);
+
     ApplyBodyType();
 }
 
@@ -199,7 +214,8 @@ void RigidBody::drawInspector()
     if (ImGui::CollapsingHeader("RigidBody"))
     {
         int current = (int)bodyType;
-        if (ImGui::Combo("Body Type", &current, bodyTypeNames, IM_ARRAYSIZE(bodyTypeNames)))
+        // Предполагается, что массив имен bodyTypeNames объявлен в хедере или глобально
+        if (ImGui::Combo("Body Type", &current, "Static\0Kinematic\0Dynamic\0"))
         {
             bodyType = (BodyType)current;
             ApplyBodyType();

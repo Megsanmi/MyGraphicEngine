@@ -11,4 +11,6 @@ struct Vertex {
     glm::vec3 Tangent;
     glm::vec3 Bitangent;
  
+    glm::ivec4 boneID {0,0,0,0};
+    glm::vec4 weights { 0,0,0,0 };
 };

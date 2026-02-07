@@ -9,9 +9,11 @@ struct GLFWwindow;
 class Camera : public Component
 {
 public:
-	
 	bool perspective_camera = true;
 	bool escape = false;
+	double lastX;
+	double lastY;
+	bool firstMouse = true;;
 
 	Transform* T;
 

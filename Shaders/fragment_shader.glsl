@@ -5,19 +5,19 @@ in vec2 TexCoord;
 in vec3 frag_normal;
 in vec3 frag_position;
 in mat3 TBN;
-
+in vec3 color;
 
 out vec4 out_color;
 
 uniform vec3 light_directions[MAX_LIGHTS]; 
 uniform vec3 light_color;     
 uniform vec3 ambient_color;   
-uniform vec3 solidColor = vec3(0.5,0.5,0.5);
-uniform sampler2D ourTexture;
+uniform vec4 solidColor = vec4(0.5f);
+uniform sampler2D diffuseTexture;
 uniform sampler2D normalMap;
 
 uniform int lightCount;
-uniform sampler2D shadowMaps[MAX_LIGHTS];
+layout(binding = 20) uniform sampler2D shadowMaps[MAX_LIGHTS];
 uniform mat4 lightSpaceMatrices[MAX_LIGHTS];
 
 uniform bool isShaded;
@@ -27,8 +27,7 @@ uniform bool UseSolidColor;
 
 float ShadowCalculation(int lightIndex, vec3 normal)
 {
-    vec4 fragPosLightSpace =
-        lightSpaceMatrices[lightIndex] * vec4(frag_position, 1.0);
+    vec4 fragPosLightSpace = lightSpaceMatrices[lightIndex] * vec4(frag_position, 1.0);
 
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -37,7 +36,7 @@ float ShadowCalculation(int lightIndex, vec3 normal)
         return 0.0;
 
     //float bias = max(0.0005 * (1.0 - dot(normal, normalize(-light_directions[lightIndex]))), 0.0005);
-    float bias = 0.00005;
+    float bias = 0.0005;
 
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMaps[lightIndex], 0);
@@ -57,25 +56,32 @@ float ShadowCalculation(int lightIndex, vec3 normal)
     return shadow / 9.0;
 }
 
+vec3 hash(int n) {
+    n = (n << 13) ^ n;
+    return vec3(
+        (1.0 - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0),
+        (1.0 - ((n * (n * n * 12345 + 123456) + 23456789) & 0x7fffffff) / 1073741824.0),
+        (1.0 - ((n * (n * n * 98765 + 54321) + 11223344) & 0x7fffffff) / 1073741824.0)
+    );
+}
 void main() {
-    
-
+    vec3 tex = texture(diffuseTexture, TexCoord).rgb;
+    float alpha = texture(diffuseTexture, TexCoord).a+0.2;
+    if (alpha <0.8 ) discard;
+    else alpha += 1;
     vec3 normal = texture(normalMap, TexCoord).xyz;
-    
+
     normal = normal * 2.0 - 1.0;
-    normal = -normalize(TBN * normal);
+    normal = normalize(TBN * normal);
 
     vec3 N = UseNormalMap ? normalize(normal) : normalize(frag_normal) ;
 
-
     
-   
+    if (UseSolidColor)  {
+        alpha = solidColor.a;
+        tex = solidColor.rgb;        
+    }
     
-
-
-    vec3 tex = texture(ourTexture, TexCoord).rgb;
-    if (UseSolidColor) tex = solidColor;
-
     vec3 lighting = light_color * tex;
     for (int i = 0; i <lightCount;i++)
     {
@@ -86,5 +92,9 @@ void main() {
         lighting += (1.0 - shadow) * diff * light_color * tex;
    }
 
-    out_color = vec4(lighting, 1.0);
+    vec3 depth = texture(shadowMaps[0], TexCoord).rgb;
+    
+    out_color = vec4(lighting, alpha);
+    //out_color = vec4(hash(gl_PrimitiveID), 1.0);
+return;
 }

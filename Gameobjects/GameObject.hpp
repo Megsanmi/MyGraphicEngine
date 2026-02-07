@@ -17,6 +17,7 @@
 
 #include "PerlinNoise.hpp"
 
+
 using namespace glm;
 using namespace std;
 using namespace nlohmann;
@@ -52,25 +53,18 @@ public:
         }
     }
 
-    struct ComponentFactory {
-        std::string name; // имя для UI
-        std::function<Component* (GameObject*)> createFunc; // функция создания компонента
-    };
+
 
 };
 
 
-// Трансформ не переместить ниже т.к он добавляется в GameObject
 
 class Transform : public Component {
 public:
-
     glm::vec3 position{ 0,0,0 };
     glm::vec3 rotationEuler{ 0.f,0.f,0.f };
     glm::vec3 scale{ 1,1,1 };
     glm::quat qrotation{1,0,0,0};
-
-
 
     void Update()
     {
@@ -87,6 +81,7 @@ public:
                 
             }
             ImGui::DragFloat3("scale", &scale.x, 0.01f);
+            
         }
     };
 
@@ -96,15 +91,17 @@ public:
             {"type","Transform"},
             {"position",{position.x,position.y,position.z}},
             {"rotationEuler",{rotationEuler.x,rotationEuler.y,rotationEuler.z}},
+            {"qrotation",{qrotation.w,qrotation.x,qrotation.y,qrotation.z}},
             {"scale",{scale.x,scale.y,scale.z}}
         };
     };
 
 
     void Deserialize(const json& j) override {
-        position = glm::vec3(j["position"][0], j["position"][1], j["position"][2]);
-        rotationEuler = glm::vec3(j["rotationEuler"][0], j["rotationEuler"][1], j["rotationEuler"][2]);
-        scale = glm::vec3(j["scale"][0], j["scale"][1], j["scale"][2]);
+        if (j.contains("position")) position = glm::vec3(j["position"][0], j["position"][1], j["position"][2]);
+        if (j.contains("rotationEuler")) rotationEuler = glm::vec3(j["rotationEuler"][0], j["rotationEuler"][1], j["rotationEuler"][2]);
+        if (j.contains("qrotation")) qrotation = glm::quat(j["qrotation"][0], j["qrotation"][1], j["qrotation"][2],j["qrotation"][3]);
+        if (j.contains("scale")) scale = glm::vec3(j["scale"][0], j["scale"][1], j["scale"][2]);
     }
 
     mat4 GetMatrix() {
@@ -126,8 +123,11 @@ public:
 
 class GameObject {
 public:
-
+    int ID = 0;
+    int parentID = -1;
     Scene* scene = nullptr;
+    std::unordered_map<string, Model*>* modelCache;
+
     GameObject* parent = nullptr;
     string name = "GameObject";
     Transform* transform;
@@ -153,6 +153,8 @@ public:
 
     void AddChild(GameObject* child) {
         child->parent = this;
+        child->parentID = ID;
+        
         children.push_back(child);
     }
 
@@ -190,6 +192,7 @@ public:
 
     void drawInspector()
     {
+        ImGui::Text(to_string(ID).c_str());
         for (auto& c : components)
             c->drawInspector();
     }
@@ -215,7 +218,7 @@ public:
 
 
     MeshRenderer(const std::string& modelPath, Renderer::ShaderProgram& shader) : path(modelPath), shaderProgram(shader) {
-        model = new Model(path.c_str());
+    
     }
 
     MeshRenderer(Model* m, Renderer::ShaderProgram& shader)
@@ -229,7 +232,20 @@ public:
         model->SetUV(u0, v0, u1, v1);
     }
 
-    void OnEnable() {};
+    void OnEnable() {
+        if (gameObject->modelCache->count(path) > 0) {
+            auto& cache = *gameObject->modelCache;
+            model = cache[path]; // Сразу отдаем готовую
+        }
+        else
+        {
+            model = new Model(path.c_str());
+
+            auto& cache = *gameObject->modelCache;
+
+            cache[path] = model;
+        }
+    };
 
     void OnDisable() {};
 
@@ -243,11 +259,12 @@ public:
         if (ImGui::CollapsingHeader("MeshRenderer"))
         {
             ImGui::Checkbox("enabled", &enabled);
-            ImGui::Text("path", path.c_str());
+            ImGui::Text(path.c_str());
             ImGui::Checkbox("isShaded", &isShaded);
             ImGui::DragFloat3("Offset", &meshOffset.x,0.05);
             ImGui::Checkbox("UseNormalMap", &UseNormalMap);
             ImGui::Checkbox("UseSolidColor", &UseSolidColor);
+            //ImGui::ColorPicker4("SolidColor", &model->solidColor.x, 0.05);
         }
 
     };
@@ -266,16 +283,18 @@ public:
         std::string pathj = j["path"];
         path = pathj;
         meshOffset = glm::vec3(j["meshOffset"][0], j["meshOffset"][1], j["meshOffset"][2]);
-        //model =new Model(path.c_str());
         isShaded = j["isShaded"];
+        UseNormalMap = j["UseNormalMap"];
     }
 
     void Draw(Renderer::ShaderProgram& shaderProgram) {
         if (model) {
 
             shaderProgram.use();
+            if (model->animations.size())
+                shaderProgram.setBool("useSkinning", true);
 
-            mat4 modelMatrix = glm::translate(gameObject->transform->GetMatrix(), meshOffset);
+            mat4 modelMatrix = glm::translate(gameObject->GetWorldMatrix(), meshOffset);
 
             shaderProgram.setMatrix4("model_matrix", modelMatrix);
             shaderProgram.setBool("isShaded", isShaded);
@@ -285,6 +304,7 @@ public:
 
 
             model->Draw(shaderProgram);
+            shaderProgram.setBool("useSkinning", false);
         }
     }
 };

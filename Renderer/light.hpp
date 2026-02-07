@@ -19,13 +19,14 @@ public:
 	glm::vec3 ambient = { 0.3f,0.3f,0.3f };
 
 	Renderer::ShaderProgram& shaderprogram;
-	ShadowMap Shadowmap;
+	ShadowMap* Shadowmap;
+	int mapSize = 1000;
 
 	float nearPlane = 0.1f;
 	float farPlane = 10000.f;
 	
-	float planeW = 1000.f; 
-	float planeH = 1000.f;
+	float planeW = 600.f; 
+	float planeH = 600.f;
 
 	int WIDTH = 1920;
 	int HEIGHT = 1024;
@@ -40,34 +41,20 @@ public:
 
 	void DrawShadowMap(glm::mat4 model,unsigned int texID);
 
-	void drawInspector()
-	{
-		
-		if (ImGui::CollapsingHeader("Light"))
-		{
-			ImGui::Checkbox("enabled", &enabled);
-			ImGui::DragFloat2("shadow zone: ", &planeW, 0.1f);
-			ImGui::ColorEdit3("Color light", &color.x);
-			ImGui::Checkbox("Draw shadow plane", &drawPlane);
-		}
-	};
+	void drawInspector();
 		
 	void Update(float dt)
 	{
 		
 	}
 
-	void Deserialize(const json& j) override {
-		color = glm::vec3(j["color"][0], j["color"][1], j["color"][2]);
-		ambient = glm::vec3(j["ambient"][0], j["ambient"][1], j["ambient"][2]);
-
-
-	};
+	void Deserialize(const json& j);
 
 	json Serialize() override {
 		return{
 				{"type","Light"},
 				{"color",{color.x,color.y,color.z}},
+				{"mapSize",mapSize},
 				{"ambient",{ambient.x,ambient.y,ambient.z}},
 			
 		};
@@ -88,7 +75,9 @@ private:
 	0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
 	0.5f,  0.5f, 0.0f,  1.0f, 1.0f
 	};
+
 	unsigned int quadVAO, quadVBO;
+	
 	std::vector<std::unique_ptr<GameObject>>& m_objects;
 	
 

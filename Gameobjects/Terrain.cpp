@@ -22,7 +22,7 @@ Terrain::Terrain(Renderer::ShaderProgram& shader)
 
 Terrain::~Terrain() {
     for (auto& pair : chunks) {
-        //pair.second.release(gameObject->scene->dynamicsWorld);
+        pair.second.release(gameObject->scene->dynamicsWorld);
         delete pair.second.mesh;
     }
     delete terrainModel;
@@ -48,7 +48,7 @@ void Terrain::Update(float dt) {
 
     glm::ivec2 camChunk = worldToChunk(gameObject->scene->camera->position);
 
-  
+    
     for (int z = -viewDistance; z <= viewDistance; z++) {
         for (int x = -viewDistance; x <= viewDistance; x++) {
             loadChunk(camChunk.x + x, camChunk.y + z);
@@ -86,7 +86,7 @@ void Terrain::loadChunk(int cx, int cz) {
 
     TerrainChunk chunk;
     chunk.coord = { cx, cz };
-    generateChunkMesh(cx, cz, chunk);
+    generateChunkMesh(cx, cz, chunk, m_lod);
     chunks[key] = chunk;
 }
 
@@ -96,22 +96,25 @@ float Terrain::getHeight(int x, int z) {
     return (h * 0.5f + 0.5f) * heightMultiplier;
 }
 
-void Terrain::generateChunkMesh(int cx, int cz, TerrainChunk& outChunk) {
+void Terrain::generateChunkMesh(int cx, int cz, TerrainChunk& outChunk,int lod) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
 
     float offset_x = cx * chunkSize * scale;
     float offset_z = cz * chunkSize * scale;
 
-    for (int z = 0; z <= chunkSize; ++z) {
-        for (int x = 0; x <= chunkSize; ++x) {
-            Vertex v;
-            float worldX = (cx * chunkSize + x);
-            float worldZ = (cz * chunkSize + z);
-            float y = getHeight((int)worldX, (int)worldZ);
+    int segments = chunkSize / lod;
 
-            v.Position = glm::vec3(x * scale + offset_x, y, z * scale + offset_z);
-            v.TexCoords = glm::vec2((float)x / chunkSize, (float)z / chunkSize);
+    for (int z = 0; z <= segments; ++z) {
+        for (int x = 0; x <= segments; ++x) {
+            Vertex v;
+            float worldX = (cx * chunkSize + x * lod);
+            float worldZ = (cz * chunkSize + z * lod);
+            float y = 0;
+            if(!flat) y = getHeight((int)worldX, (int)worldZ);
+
+            v.Position = glm::vec3(x * scale * lod + offset_x, y, z * lod * scale + offset_z);
+            v.TexCoords = glm::vec2((float)x / segments, (float)z / segments);
             v.Normal = glm::vec3(0, 0, 0);
             vertices.push_back(v);
         }
@@ -119,10 +122,10 @@ void Terrain::generateChunkMesh(int cx, int cz, TerrainChunk& outChunk) {
 
     outChunk.triangleMesh = new btTriangleMesh();
 
-    for (int z = 0; z < chunkSize; ++z) {
-        for (int x = 0; x < chunkSize; ++x) {
-            int r1 = z * (chunkSize + 1);
-            int r2 = (z + 1) * (chunkSize + 1);
+    for (int z = 0; z < segments; ++z) {
+        for (int x = 0; x < segments; ++x) {
+            int r1 = z * (segments + 1);
+            int r2 = (z + 1) * (segments + 1);
             unsigned int i0 = r1 + x, i1 = r1 + x + 1, i2 = r2 + x, i3 = r2 + x + 1;
 
             indices.insert(indices.end(), { i0, i2, i1, i1, i2, i3 });
@@ -151,7 +154,7 @@ void Terrain::generateChunkMesh(int cx, int cz, TerrainChunk& outChunk) {
     outChunk.body = new btRigidBody(info);
     gameObject->scene->dynamicsWorld->addRigidBody(outChunk.body);
 
-    Texture tex{ textureID, "texture_diffuse", "" };
+    Texture tex{ textureID, "diffuseTexture", "" };
     outChunk.mesh = new Mesh(vertices, indices, { tex });
 
     terrainModel->meshes.push_back(*outChunk.mesh);

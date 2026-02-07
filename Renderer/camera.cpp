@@ -18,10 +18,21 @@ void Camera::UpdateCam(float dt)
 	
 	if (escape)
 	{
-		glfwSetInputMode(gameObject->scene->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		// Если мы только что включили режим обзора
+		if (glfwGetInputMode(gameObject->scene->window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED) {
+			glfwSetInputMode(gameObject->scene->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+			// СБРОС: Считываем текущую позицию, чтобы не было прыжка
+			double xpos, ypos;
+			glfwGetCursorPos(gameObject->scene->window, &xpos, &ypos);
+			lastX = xpos;
+			lastY = ypos;
+		}
 		process_input(gameObject->scene->window);
 	}
-	else glfwSetInputMode(gameObject->scene->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	else {
+		glfwSetInputMode(gameObject->scene->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
 
 
 	if (glfwGetKey(gameObject->scene->window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -42,6 +53,7 @@ void Camera::UpdateCam(float dt)
 void Camera::OnEnable()
 {
 	T = gameObject->GetComponent<Transform>();
+	
 }
 void Camera::OnDisable()
 {
@@ -159,34 +171,35 @@ void Camera::set_projection_mode(const ProjectionMode projection_mode)
 
 void Camera::process_input(GLFWwindow* window)
 {
-	static double lastX = 0;
-	static double lastY = 0;
-	static bool firstMouse = true;
-	
-	float rot_speed = 0.1f;
-
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 
-	double xoffset = lastX - xpos;
-	double yoffset = lastY - ypos; // перевернутый Y
-	xoffset *= rot_speed;
-	yoffset *= rot_speed;
-
-	lastX = xpos;
-	lastY = ypos;
-
-		
-
-	// Обновляем вращение камеры
-	T->rotationEuler.y += (float)xoffset;
-	T->rotationEuler.x += (float)yoffset;
-
-	if (firstMouse) {
+	// Если это самый первый кадр работы камеры
+	if (firstMouse)
+	{
 		lastX = xpos;
 		lastY = ypos;
 		firstMouse = false;
 	}
+
+	// Считаем смещение
+	double xoffset = lastX - xpos; // Стандарт: текущее минус прошлое
+	double yoffset = lastY - ypos; // Инвертируем Y, так как координаты экрана идут сверху вниз
+
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	// Обновляем вращение (Y - это Yaw, X - это Pitch)
+	T->rotationEuler.y += (float)xoffset;
+	T->rotationEuler.x += (float)yoffset;
+
+	// Ограничение по вертикали
+	if (T->rotationEuler.x > 89.0f) T->rotationEuler.x = 89.0f;
+	if (T->rotationEuler.x < -89.0f) T->rotationEuler.x = -89.0f;
 
 	float yaw = glm::radians(T->rotationEuler.y);
 	float pitch = glm::radians(T->rotationEuler.x);
@@ -206,7 +219,7 @@ void Camera::process_input(GLFWwindow* window)
 
 	glm::vec3 up(0, 0.5f, 0);
 
-		
+	
 		
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) T->position += forward * speed;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) T->position -= forward * speed;

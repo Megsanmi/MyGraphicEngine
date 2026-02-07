@@ -3,8 +3,7 @@
 
 Light::Light(std::vector<std::unique_ptr<GameObject>>& objects, Renderer::ShaderProgram& s)
     :m_objects(objects),
-    shaderprogram(s),
-    Shadowmap(10000, 10000)
+    shaderprogram(s)
 { 
 
 }
@@ -19,7 +18,8 @@ Light::~Light() {
 
 void Light::OnEnable()
 {
-
+    Shadowmap = new ShadowMap(*gameObject->scene->ShadowShader,1000,1000);
+   
     WIDTH = gameObject->scene->width;
     HEIGHT = gameObject->scene->height;
 
@@ -41,6 +41,29 @@ void Light::OnEnable()
     if (!gameObject || !gameObject->scene) return;
     gameObject->scene->lights.push_back(this);
 }
+void Light::drawInspector()
+{
+
+    if (ImGui::CollapsingHeader("Light"))
+    {
+        ImGui::Checkbox("enabled", &enabled);
+        ImGui::DragFloat2("shadow zone: ", &planeW, 0.1f);
+        ImGui::ColorEdit3("Color light", &color.x);
+        ImGui::Checkbox("Draw shadow plane", &drawPlane);
+        ImGui::DragInt("map size: ", &mapSize);
+        if (ImGui::Button("Resize Map")) Shadowmap = new ShadowMap(*gameObject->scene->ShadowShader, mapSize, mapSize);
+    }
+};
+
+void Light::Deserialize(const json& j) {
+    color = glm::vec3(j["color"][0], j["color"][1], j["color"][2]);
+    ambient = glm::vec3(j["ambient"][0], j["ambient"][1], j["ambient"][2]);
+    if (j.contains("mapSize")) mapSize = j["mapSize"];
+
+    //Shadowmap = new ShadowMap(*gameObject->scene->ShadowShader, mapSize, mapSize);
+};
+
+
 void Light::OnDisable()
 {
     if (!gameObject || !gameObject->scene) return;
@@ -76,7 +99,7 @@ void Light::drawShade()
     lightDir.y = sin(glm::radians(pitch));
     lightDir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-    glm::vec3 lightPos = transform->position - lightDir * 500.f;
+    glm::vec3 lightPos = gameObject->scene->camera->position - lightDir * 500.f;
 
     glm::mat4 lightView = glm::lookAt(lightPos, lightPos + lightDir, { 0,1,0 });
     
@@ -101,22 +124,22 @@ void Light::drawShade()
 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos) * rotation * glm::scale(glm::mat4(1.0f), glm::vec3(planeW, planeH, 1.0f));
    
-    Shadowmap.beginRender();
+    Shadowmap->beginRender();
 
     
     
     for (auto& obj : m_objects)
     {
         auto mesh = obj->GetComponent<MeshRenderer>();
-        if (mesh && mesh->isShaded) mesh->Draw(Shadowmap.getShader());
+        if (mesh && mesh->isShaded) mesh->Draw(Shadowmap->getShader());
             
     }
   
-    Shadowmap.endRender(WIDTH, HEIGHT);
+    Shadowmap->endRender(WIDTH, HEIGHT);
 
-    Shadowmap.setLightSpaceMatrix(lightSpaceMatrix);
+    Shadowmap->setLightSpaceMatrix(lightSpaceMatrix);
 
     shaderprogram.use();
     
-    if (drawPlane) DrawShadowMap(model, Shadowmap.getDepthTex());
+    if (drawPlane) DrawShadowMap(model, Shadowmap->getDepthTex());
 }

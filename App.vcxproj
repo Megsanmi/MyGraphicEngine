@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Gameobjects\Animator.cpp" />
     <ClCompile Include="Gameobjects\DebugDraw.cpp" />
     <ClCompile Include="Gameobjects\DebugDraw.hpp" />
     <ClCompile Include="Gameobjects\particle.cpp" />
@@ -168,6 +169,7 @@
     <ClCompile Include="scripts\player.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Gameobjects\Animator.hpp" />
     <ClInclude Include="Gameobjects\GameObject.hpp" />
     <ClInclude Include="Gameobjects\particle.hpp" />
     <ClInclude Include="Gameobjects\scene.hpp" />
@@ -989,11 +991,11 @@
     <ClInclude Include="Gameobjects\Mesh.hpp" />
     <ClInclude Include="lib\json.hpp" />
     <ClInclude Include="lib\stb_image.h" />
-    <ClInclude Include="scripts\player.hpp" />
     <ClInclude Include="Renderer\camera.hpp" />
     <ClInclude Include="Renderer\light.hpp" />
     <ClInclude Include="Renderer\ShaderProgram.hpp" />
     <ClInclude Include="Renderer\ShadowMap.hpp" />
+    <ClInclude Include="scripts\player.hpp" />
     <ClInclude Include="Gameobjects\Texture.hpp" />
     <ClInclude Include="Gameobjects\Vertex.hpp" />
   </ItemGroup>

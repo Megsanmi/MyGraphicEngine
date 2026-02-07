@@ -11,9 +11,12 @@
 #include "Terrain.hpp"
 #include "particle.hpp"
 #include "../scripts/player.hpp"
+#include "Animator.hpp"
 
 Scene::Scene(int w, int h, Renderer::ShaderProgram& shaderProgram) : GlobalShaderProgram(shaderProgram), width(w), height(h)
 {
+	ShadowShader = new  Renderer::ShaderProgram(vsBuffer,fsBuffer);
+
 	InitPhysics();
 }
 
@@ -24,13 +27,23 @@ void Scene::shadowRender()
 
 	for (unsigned int i = 0;i < lights.size(); i++)
 	{
-		lights[i]->Shadowmap.bindDepthTexture(lights[i]->Shadowmap.getDepthTex());
+		lights[i]->Shadowmap->bindDepthTexture(lights[i]->Shadowmap->getDepthTex());
 		GlobalShaderProgram.setMatrix4(("lightSpaceMatrices[" + std::to_string(i) + "]").c_str(), lights[i]->getLightSpaceMatrix());
-		GlobalShaderProgram.setInt("shadowMaps[" + std::to_string(i) + "]", lights[i]->Shadowmap.getDepthTex());
+		GlobalShaderProgram.setInt("shadowMaps[" + std::to_string(i) + "]", lights[i]->Shadowmap->getDepthTex());
 		GlobalShaderProgram.setVec3("light_directions[" + std::to_string(i) + "]", lights[i]->lightDir);
 		GlobalShaderProgram.setVec3("light_color", lights[i]->color);
 		GlobalShaderProgram.setVec3("ambient_color", lights[i]->ambient);
 	};
+
+	for (auto& obj : objects)
+	{
+
+		if (auto light = obj->GetComponent<Light>())
+		{
+			obj->GetComponent<Light>()->drawShade();
+		}
+
+	}
 }
 
 GameObject* Scene::Addobject(const string name)
@@ -39,11 +52,15 @@ GameObject* Scene::Addobject(const string name)
 	GameObject* ptr = obj.get();
 
 	obj->scene = this;
-
+	obj->ID = IDs;
+	IDs++;
+	idToMap[obj->ID] = ptr;
+	obj->modelCache = &modelCache;
 	objects.push_back(std::move(obj));
 
 	return ptr; 
 }
+
 void Scene::DeleteObject(int index)
 {
 	if (index < 0 || index >= objects.size()) return;
@@ -60,16 +77,14 @@ void Scene::DeleteObject(int index)
 
 void Scene::Update(float dt)
 {
-	
 	for (auto& obj : objects)
 	{
 		if (auto rb = obj->GetComponent<RigidBody>())
 		{
-			rb->SyncTransformToPhysics();
-
+			rb->SyncTransformFromPhysics();
+			
 		}
 	}
-	
 	dynamicsWorld->stepSimulation(dt, 10);
 
 	for (auto& obj : objects)
@@ -79,6 +94,7 @@ void Scene::Update(float dt)
 			rb->SyncTransformFromPhysics();
 			if (rb->body)
 			{
+				rb->SyncTransformToPhysics();
 				rb->body->activate();
 			}
 		}
@@ -88,21 +104,11 @@ void Scene::Update(float dt)
 	
 	for (auto& obj : objects)
 	{
-
-		if (auto light = obj->GetComponent<Light>())
-		{
-			obj->GetComponent<Light>()->drawShade();
-		}
-
-	}
-
-	for (auto& obj : objects)
-	{
 		obj->Update(dt);
 	}
+
 	camera->gameObject->GetComponent<Camera>()->UpdateCam(0.13);
 }
-
 
 void Scene::InitPhysics()
 {
@@ -126,15 +132,19 @@ void Scene::InitPhysics()
 json Scene::SaveScene()
 {
 	json scene;
+	scene["IDs"] = IDs;
 	for (auto& obj : objects) {
 		json jObj;
 		jObj["name"] = obj->name;
-
+		jObj["ID"] = obj->ID;
+		jObj["parentID"] = obj->parentID;
+		
 		for (auto& c : obj->components)
 		{
 			json jComp = c->Serialize();
 
-			jObj["components"].push_back(jComp);
+			if(!jComp.is_null())
+				jObj["components"].push_back(jComp);
 		};
 
 		scene["objects"].push_back(jObj);
@@ -153,20 +163,38 @@ void Scene::LoadScene() {
 	json j;
 	file >> j;
 
-	std::vector<std::unique_ptr<GameObject>> scene;
+	IDs = j["IDs"];
 
 	for (auto& obj : j["objects"]) {
 
+		
 		objects.push_back(LoadGameObject(obj));
 		
+		
 	}
-	
+	for (auto& objJson : j["objects"]) {
+		if (objJson.contains("parentID")) {
+			int currentID = objJson["ID"];
+			int pID = objJson["parentID"];
 
+			if (pID != -1) { // Если есть родитель
+				GameObject* child = idToMap[currentID];
+				GameObject* parent = idToMap[pID];
+
+				if (child && parent) {
+					parent->AddChild(child); // Устанавливаем связь
+				}
+			}
+		}
+	}
 }
+
 void Scene::clear()
 {
-	// 1. Удаляем физику
-	if (dynamicsWorld)
+	IDs = 0;
+	idToMap.clear();
+
+	/*if (dynamicsWorld)
 	{
 		for (int i = dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
 		{
@@ -179,21 +207,24 @@ void Scene::clear()
 			dynamicsWorld->removeCollisionObject(obj);
 			delete obj;
 		}
-	}
+	}*/
 
 	lights.clear();
 	objects.clear();
 
 	
 }
+
 std::unique_ptr<GameObject> Scene::LoadGameObject(const json& j)
 {
-
 	string name = j["name"];
 
-
 	auto obj = std::make_unique<GameObject>(name);
+	obj->ID = j["ID"];
+	obj->modelCache = &modelCache;
+	if(j.contains("parentID")) obj->parentID = j["parentID"];
 	obj->scene = this;
+
 	for (auto& c : j["components"]) {
 		string type = c["type"];
 
@@ -256,5 +287,7 @@ std::unique_ptr<GameObject> Scene::LoadGameObject(const json& j)
 	}
 	if (obj->GetComponent<Camera>())
 		camera = obj->GetComponent<Transform>();
+
+	idToMap[obj->ID] = obj.get();
 	return obj;
 }

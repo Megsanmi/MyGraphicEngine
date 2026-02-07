@@ -31,6 +31,7 @@
 #include "Gameobjects/Terrain.hpp"
 #include "Gameobjects/DebugDraw.hpp"
 #include "scripts/player.hpp"
+#include "Gameobjects/Animator.hpp"
 
 
 //Настройки окна
@@ -112,6 +113,7 @@ int main() {
     std::string fragmentShader(fragment_shader);
     Renderer::ShaderProgram shaderProgram(vertex_shader, fragmentShader);
 
+
     if (!shaderProgram.isCompiled())
     {
         std::cerr << "cant create shader" << std::endl;
@@ -131,16 +133,54 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 460");
 
     //вертикаьная синхр 
-    glfwSwapInterval(1);
+    //glfwSwapInterval(1);
 
     Scene scene(WIDTH, HEIGHT, shaderProgram);
     scene.window = window;
+    /*scene.camera = scene.Addobject("Camera")->AddComponent<Camera>(shaderProgram)->gameObject->GetComponent<Transform>();
+
+    scene.Addobject("Light")->AddComponent<Light>(scene.objects,shaderProgram);
+    scene.Addobject("Terrain")->AddComponent<Terrain>(shaderProgram);*/
     scene.LoadScene();
+    
     
     double lastTime = glfwGetTime();
     int nbFrames = 0;
 
+    int gridSize = 15;     // Размер леса (10х10 деревьев)
+    float spacing = 60.0f;  // Расстояние между деревьями
 
+    //for (int x = 0; x < gridSize; x++) {
+    //    for (int z = 0; z < gridSize; z++) {
+    //        // Создаем уникальное имя для каждого дерева
+    //        std::string treeName = "Tree_" + std::to_string(x) + "_" + std::to_string(z);
+
+    //        // Добавляем объект в сцену
+    //        auto tree = scene.Addobject(treeName);
+
+    //        // Добавляем меш дерева (замени "assets/tree.obj" на свой путь)
+    //        tree->AddComponent<MeshRenderer>("assets/tree.glb", shaderProgram);
+
+    //        // Получаем компонент Transform и ставим дерево на позицию в сетке
+    //        Transform* trans = tree->GetComponent<Transform>();
+    //        if (trans) {
+    //            // Центрируем лес относительно нуля, вычитая половину общего размера
+    //            float posX = (x - gridSize / 2.0f) * spacing;
+    //            float posZ = (z - gridSize / 2.0f) * spacing;
+
+    //            trans->position = glm::vec3(posX, 0.0f, posZ);
+
+    //            // Немного рандома, чтобы лес выглядел естественнее
+    //            // (если хочешь идеально ровную сетку — удали эти строки)
+    //            float randomRotation = static_cast<float>(rand() % 360);
+    //            trans->scale = vec3(0.0005f);
+    //            trans->rotationEuler.x = -90;
+    //            trans->position.y = 10;
+    //            trans->rotationEuler.y = randomRotation;
+    //            trans->qrotation = glm::normalize(glm::quat(glm::radians(trans->rotationEuler)));
+    //        }
+    //    }
+    //}
     
 
     while (!glfwWindowShouldClose(window)) {
@@ -150,6 +190,9 @@ int main() {
         glClearColor(window_color[0],window_color[1], window_color[2], 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);        
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -164,7 +207,7 @@ int main() {
             nbFrames = 0;
             lastTime += 1.0;
         }
-      
+        
         static int selectedObjectIndex = -1;
         if (ImGui::BeginMainMenuBar())
         {
@@ -213,12 +256,30 @@ int main() {
             
             for (int i = 0; i < scene.objects.size(); ++i)
             {
-                ImGui::PushID(i);  
-                if (ImGui::Selectable(scene.objects[i]->name.c_str(), selectedObjectIndex == i))
-                {
-                    selectedObjectIndex = i;
-                }
-                ImGui::PopID();
+                
+                    ImGui::PushID(i);
+
+                    if (ImGui::Selectable(scene.objects[i]->name.c_str(), selectedObjectIndex == i))
+                    {
+                        selectedObjectIndex = i;
+                    }
+                    
+                    ImGui::PopID();
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ID"))
+                        {
+                            int dropID = *(int*)payload->Data;
+                            scene.SetParent(dropID, scene.objects[i]->ID);
+                        }
+                    }
+                    if (ImGui::BeginDragDropSource())
+                    {
+                        int id = scene.objects[i]->ID;
+                        ImGui::SetDragDropPayload("ID", &id, sizeof(int));
+                        ImGui::End();
+                    }
+
             }            
         } 
 
@@ -273,6 +334,11 @@ int main() {
                 if (ImGui::Selectable("CharacterController"))
                 {
                     CharacterController* T = obj->AddComponent<CharacterController>();
+                }
+                if (ImGui::Selectable("Animator") && obj->GetComponent<MeshRenderer>())
+                {
+                    Animator* T = obj->AddComponent<Animator>(obj->GetComponent<MeshRenderer>()->model);
+                    T->PlayAnimation(0);
                 }
                 
 
