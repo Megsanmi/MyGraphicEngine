@@ -84,7 +84,7 @@ public:
         float v1 = v0 + 1.0f / rows;
 
         
-        renderer->model->meshes[0].SetUV(u0, v0, u1, v1);
+        renderer->model->meshes[0]->SetUV(u0, v0, u1, v1);
     }
 
 

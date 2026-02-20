@@ -10,7 +10,9 @@
 
 struct TerrainChunk {
     glm::ivec2 coord;
-    Mesh* mesh = nullptr; 
+    std::unique_ptr<Mesh> mesh = nullptr;
+    Mesh* meshPtr = nullptr;
+
     btRigidBody* body = nullptr;
     btCollisionShape* shape = nullptr;
     btTriangleMesh* triangleMesh = nullptr;

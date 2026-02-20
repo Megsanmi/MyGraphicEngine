@@ -52,9 +52,6 @@ public:
             lastEnabled = enabled;
         }
     }
-
-
-
 };
 
 
@@ -68,8 +65,12 @@ public:
 
     void Update()
     {
-        
+        rotationEuler.x = 10;
+        rotationEuler.x = wrapAngle(rotationEuler.x);
+        rotationEuler.y = wrapAngle(rotationEuler.y);
+        rotationEuler.z = wrapAngle(rotationEuler.z);
     };
+
     void drawInspector()
     {
         if (ImGui::CollapsingHeader("Transform")) 
@@ -81,7 +82,6 @@ public:
                 
             }
             ImGui::DragFloat3("scale", &scale.x, 0.01f);
-            
         }
     };
 
@@ -117,6 +117,12 @@ public:
 
         return model;
     }
+    float wrapAngle(float angle)
+    {
+        angle = std::fmod(angle + 180.0f, 360.0f);
+        if (angle < 0) angle += 360.0f;
+        return angle - 180.0f;
+    }
 };
 
 
@@ -137,7 +143,6 @@ public:
     GameObject(const std::string& name = "GameObject")
         : name(name)
     {
-
         transform = new Transform();
         transform->gameObject = this;  
         components.emplace_back(transform);

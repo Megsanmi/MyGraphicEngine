@@ -56,9 +56,11 @@ void Light::drawInspector()
 };
 
 void Light::Deserialize(const json& j) {
-    color = glm::vec3(j["color"][0], j["color"][1], j["color"][2]);
-    ambient = glm::vec3(j["ambient"][0], j["ambient"][1], j["ambient"][2]);
+    if (j.contains("color")) color = glm::vec3(j["color"][0], j["color"][1], j["color"][2]);
+    if (j.contains("ambient")) ambient = glm::vec3(j["ambient"][0], j["ambient"][1], j["ambient"][2]);
     if (j.contains("mapSize")) mapSize = j["mapSize"];
+    if (j.contains("planeH")) planeH = j["planeH"];
+    if (j.contains("planeW")) planeW = j["planeW"];
 
     //Shadowmap = new ShadowMap(*gameObject->scene->ShadowShader, mapSize, mapSize);
 };

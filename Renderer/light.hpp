@@ -25,8 +25,8 @@ public:
 	float nearPlane = 0.1f;
 	float farPlane = 10000.f;
 	
-	float planeW = 600.f; 
-	float planeH = 600.f;
+	float planeW = 100.f; 
+	float planeH = 100.f;
 
 	int WIDTH = 1920;
 	int HEIGHT = 1024;
@@ -53,8 +53,11 @@ public:
 	json Serialize() override {
 		return{
 				{"type","Light"},
+
 				{"color",{color.x,color.y,color.z}},
 				{"mapSize",mapSize},
+				{"planeW",planeW},
+				{"planeH",planeH},
 				{"ambient",{ambient.x,ambient.y,ambient.z}},
 			
 		};

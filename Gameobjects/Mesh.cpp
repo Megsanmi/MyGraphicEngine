@@ -16,6 +16,7 @@ using namespace glm;
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 {
     
+
     this->vertices = vertices;
     this->indices = indices;
     this->textures = textures;
@@ -131,19 +132,24 @@ void Model::Draw(Renderer::ShaderProgram& shader)
 {
     shader.setBool("UseSolidColor", useSolidColor);
     for (unsigned int i = 0; i < meshes.size(); i++)
-        meshes[i].Draw(shader);
+        
+        meshes[i]->Draw(shader);
 }
 
 void Model::SetUV(float u0, float v0, float u1, float v1)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
-        meshes[i].SetUV(u0, v0, u1, v1);
+        meshes[i]->SetUV(u0, v0, u1, v1);
 }
 
 void Model::loadModel(std::string path)
 {
     Assimp::Importer import;
-    const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate |
+        aiProcess_FlipUVs |
+        aiProcess_GenSmoothNormals |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_ValidateDataStructure);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -162,11 +168,11 @@ void Model::loadModel(std::string path)
 
     LoadAnimationsFromAssimp(scene);
 
-    std::cout << "Meshes loaded: " << meshes.size() << std::endl;
+    /*std::cout << "Meshes loaded: " << meshes.size() << std::endl;
     for (auto& mesh : meshes)
-        std::cout << "Vertices: " << mesh.vertices.size()
-        << ", Indices: " << mesh.indices.size()
-        << ", Textures: " << mesh.textures.size() << std::endl;
+        std::cout << "Vertices: " << mesh->vertices.size()
+        << ", Indices: " << mesh->indices.size()
+        << ", Textures: " << mesh->textures.size() << std::endl;*/
 
     
 }
@@ -197,7 +203,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh, scene));
+        meshes.push_back(move(processMesh(mesh, scene)));
     }
 
     // » проделываем то же самое дл€ всех дочерних узлов
@@ -269,7 +275,7 @@ void Model::BuildBoneHierarchy(aiNode* node, int parentBone)
     }
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+std::unique_ptr<Mesh> Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
     vector<Vertex> vertices;
     vector<unsigned int> indices;
@@ -433,7 +439,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         std::cout << "no materials \n";
     }
 
-    return Mesh(vertices, indices, textures);
+    return std::make_unique<Mesh>(vertices, indices, textures);
 }
 
 

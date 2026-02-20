@@ -36,7 +36,7 @@ float ShadowCalculation(int lightIndex, vec3 normal)
         return 0.0;
 
     //float bias = max(0.0005 * (1.0 - dot(normal, normalize(-light_directions[lightIndex]))), 0.0005);
-    float bias = 0.0005;
+    float bias = 0.00005;
 
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMaps[lightIndex], 0);

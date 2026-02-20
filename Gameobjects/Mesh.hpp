@@ -13,6 +13,8 @@
 #include "../Renderer/ShaderProgram.hpp"
 #include <unordered_map>
 #include <ext.hpp>
+#include <memory>
+
 
 using namespace std;
 struct VectorKey { float time; glm::vec3 value; };
@@ -131,12 +133,14 @@ struct Skeleton {
 };
 
 
-
-
-
-
 class Mesh {
 public:
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+
+    Mesh(Mesh&&) noexcept = default;     
+    Mesh& operator=(Mesh&&) noexcept = default;
+
     // Mesh-данные
     vector<Vertex>       vertices;
     vector<unsigned int> indices;
@@ -145,6 +149,18 @@ public:
     
 
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures);
+    ~Mesh()
+    {
+        if (EBO) glDeleteBuffers(1, &EBO);
+        if (VBO) glDeleteBuffers(1, &VBO);
+        if (VAO) glDeleteVertexArrays(1, &VAO);
+
+        //for (auto& tex : textures)
+        //{
+        //    if (tex.id)
+        //        glDeleteTextures(1, &tex.id);
+        //}
+    }
     void SetUV(float u0, float v0, float u1, float v1);
     void Draw(Renderer::ShaderProgram& shader);
     void setupMesh();
@@ -164,7 +180,7 @@ public:
 
     float rotationAngle = 0;
 
-    std::vector<Mesh> meshes;
+    std::vector<std::unique_ptr<Mesh>> meshes;
     Skeleton skeleton;
 
     bool useSolidColor = false;  
@@ -182,16 +198,11 @@ public:
         loadModel(path);
     };
 
-    Model(Mesh& mesh)
-    {
-        meshes.emplace_back(mesh);
-    };
-
     Model(vector<Vertex> vertices,
         vector<unsigned int> indices,
         vector<Texture> textures)
     {
-        meshes.emplace_back(vertices, indices, textures);
+        meshes.emplace_back(std::make_unique<Mesh>(vertices, indices, textures));
     };
 
     void SetUV(float u0, float v0, float u1, float v1);
@@ -242,7 +253,7 @@ private:
     void LoadAnimationsFromAssimp(const aiScene* scene);
     void loadModel(string path);
     void processNode(aiNode* node, const aiScene* scene);
-    Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+    std::unique_ptr<Mesh> processMesh(aiMesh* mesh, const aiScene* scene);
     vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName, const aiScene* scene);
 };
 

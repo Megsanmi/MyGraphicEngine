@@ -81,8 +81,8 @@ void Scene::Update(float dt)
 	{
 		if (auto rb = obj->GetComponent<RigidBody>())
 		{
-			rb->SyncTransformFromPhysics();
-			
+			rb->SyncTransformToPhysics();
+
 		}
 	}
 	dynamicsWorld->stepSimulation(dt, 10);
@@ -91,10 +91,10 @@ void Scene::Update(float dt)
 	{
 		if (auto rb = obj->GetComponent<RigidBody>())
 		{
-			rb->SyncTransformFromPhysics();
+			
 			if (rb->body)
 			{
-				rb->SyncTransformToPhysics();
+				rb->SyncTransformFromPhysics();
 				rb->body->activate();
 			}
 		}
@@ -106,8 +106,9 @@ void Scene::Update(float dt)
 	{
 		obj->Update(dt);
 	}
-
-	camera->gameObject->GetComponent<Camera>()->UpdateCam(0.13);
+	
+	if(camera)
+		camera->gameObject->GetComponent<Camera>()->UpdateCam(0.13);
 }
 
 void Scene::InitPhysics()
@@ -194,7 +195,7 @@ void Scene::clear()
 	IDs = 0;
 	idToMap.clear();
 
-	/*if (dynamicsWorld)
+	if (dynamicsWorld)
 	{
 		for (int i = dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
 		{
@@ -207,7 +208,7 @@ void Scene::clear()
 			dynamicsWorld->removeCollisionObject(obj);
 			delete obj;
 		}
-	}*/
+	}
 
 	lights.clear();
 	objects.clear();

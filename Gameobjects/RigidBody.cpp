@@ -41,25 +41,23 @@ void RigidBody::SyncTransformFromPhysics()
 
     Transform* t = gameObject->GetComponent<Transform>();
     if (!t) return;
-
-    // Получаем мировую матрицу из Bullet
+ 
     float m[16];
     trans.getOpenGLMatrix(m);
     glm::mat4 worldMatPhysics = glm::make_mat4(m);
 
     if (gameObject->parent)
     {
-        // Вычисляем локальную матрицу: Local = Inverse(ParentWorld) * CurrentWorld
+        
         glm::mat4 parentWorldMat = gameObject->parent->GetWorldMatrix();
         glm::mat4 localMat = glm::inverse(parentWorldMat) * worldMatPhysics;
-
-        // Извлекаем позицию и вращение из локальной матрицы
+ 
         t->position = glm::vec3(localMat[3]);
         t->qrotation = glm::quat_cast(localMat);
     }
     else
     {
-        // Если родителя нет, мировая позиция из Bullet — это и есть локальная позиция
+       
         t->position = glm::vec3(trans.getOrigin().x(), trans.getOrigin().y(), trans.getOrigin().z());
         btQuaternion rot = trans.getRotation();
         t->qrotation = glm::quat(rot.getW(), rot.getX(), rot.getY(), rot.getZ());
@@ -73,19 +71,41 @@ void RigidBody::SyncTransformToPhysics()
     Transform* t = gameObject->GetComponent<Transform>();
     if (!t) return;
 
-    // Получаем полную мировую матрицу (с учетом всей иерархии родителей)
+    
     glm::mat4 worldMat = gameObject->GetWorldMatrix();
+    
+    glm::vec3 position = glm::vec3(worldMat[3]);
+    
+    glm::vec3 scale;
+    scale.x = glm::length(glm::vec3(worldMat[0]));
+    scale.y = glm::length(glm::vec3(worldMat[1]));
+    scale.z = glm::length(glm::vec3(worldMat[2]));
+    
+    glm::mat3 rotationMatrix;
+    rotationMatrix[0] = glm::vec3(worldMat[0]) / scale.x;
+    rotationMatrix[1] = glm::vec3(worldMat[1]) / scale.y;
+    rotationMatrix[2] = glm::vec3(worldMat[2]) / scale.z;
+
+    glm::quat rotation = glm::quat_cast(rotationMatrix);
 
     btTransform trans;
-    trans.setFromOpenGLMatrix(glm::value_ptr(worldMat));
+    trans.setOrigin(btVector3(position.x, position.y, position.z));
+    trans.setRotation(btQuaternion(
+        rotation.x,
+        rotation.y,
+        rotation.z,
+        rotation.w
+    ));
 
-    // Обновляем состояние движения и само тело в Bullet
+    //trans.setFromOpenGLMatrix(glm::value_ptr(worldMat));
+
+    
     if (body->getMotionState())
         body->getMotionState()->setWorldTransform(trans);
 
     body->setWorldTransform(trans);
 
-    // Синхронизируем масштаб коллайдера
+    
     if (collider && collider->shape)
     {
         body->getCollisionShape()->setLocalScaling(btVector3(t->scale.x, t->scale.y, t->scale.z));
@@ -105,7 +125,7 @@ void RigidBody::TryCreatePhysics()
     if (!scene || !t)
         return;
 
-    // Начальная позиция в мире
+    
     glm::mat4 worldMat = gameObject->GetWorldMatrix();
     btTransform startTransform;
     startTransform.setFromOpenGLMatrix(glm::value_ptr(worldMat));
@@ -130,22 +150,26 @@ void RigidBody::ApplyBodyType()
     if (!body) return;
 
     int flags = body->getCollisionFlags();
-    // Сбрасываем старые флаги
+  
     flags &= ~(btCollisionObject::CF_STATIC_OBJECT | btCollisionObject::CF_KINEMATIC_OBJECT);
 
     switch (bodyType)
     {
     case BodyType::Static:
+    {
         flags |= btCollisionObject::CF_STATIC_OBJECT;
         body->setMassProps(0, btVector3(0, 0, 0));
         body->setActivationState(DISABLE_DEACTIVATION);
         break;
+    }
 
     case BodyType::Kinematic:
+    {
         flags |= btCollisionObject::CF_KINEMATIC_OBJECT;
         body->setMassProps(0, btVector3(0, 0, 0));
         body->setActivationState(DISABLE_DEACTIVATION);
         break;
+    }
 
     case BodyType::Dynamic:
     {
@@ -154,8 +178,8 @@ void RigidBody::ApplyBodyType()
             collider->shape->calculateLocalInertia(mass, inertia);
         body->setMassProps(mass, inertia);
         body->setActivationState(ACTIVE_TAG);
+        break;
     }
-    break;
     }
 
     body->setCollisionFlags(flags);
@@ -197,7 +221,7 @@ json RigidBody::Serialize()
     return {
         {"type", "RigidBody"},
         {"mass", mass},
-        {"bodyType", (int)bodyType} // Приводим к int для корректного сохранения enum
+        {"bodyType", (int)bodyType} 
     };
 }
 
@@ -214,7 +238,7 @@ void RigidBody::drawInspector()
     if (ImGui::CollapsingHeader("RigidBody"))
     {
         int current = (int)bodyType;
-        // Предполагается, что массив имен bodyTypeNames объявлен в хедере или глобально
+        
         if (ImGui::Combo("Body Type", &current, "Static\0Kinematic\0Dynamic\0"))
         {
             bodyType = (BodyType)current;
@@ -258,7 +282,7 @@ void Collider::OnEnable()
         rb->TryCreatePhysics();
         rb->OnColliderChanged();
     }
-        
+
 }
 
 void Collider::OnDisable()
@@ -292,26 +316,37 @@ void Collider::Deserialize(const json& j)
 
 void Collider::RebuildShape()
 {
-    
+
     if (shape) {
         delete shape;
     }
 
-  
+
     switch (type)
     {
     case ColliderType::Box:
+    {
         shape = new btBoxShape(btVector3(size.x * 0.5f, size.y * 0.5f, size.z * 0.5f));
         break;
+    }
     case ColliderType::Sphere:
+    {
         shape = new btSphereShape(radius);
         break;
+    }
     case ColliderType::Capsule:
+    {
         shape = new btCapsuleShape(radius, height);
         break;
     }
+    case ColliderType::Mesh:
+    {
+        BuildFromMesh();
+        break;
+    }
+    }
 
-  
+   
     if (gameObject) {
         if (auto rb = gameObject->GetComponent<RigidBody>()) {
             rb->OnColliderChanged();
@@ -326,7 +361,7 @@ void Collider::drawInspector()
     ImGui::Checkbox("Draw collider", &drawColision);
 
     int current = (int)type;
-    if (ImGui::Combo("Shape", &current, "Box\0Sphere\0Capsule\0"))
+    if (ImGui::Combo("Shape", &current, "Box\0Sphere\0Capsule\0Mesh\0"))
     {
         type = (ColliderType)current;
         RebuildShape();
@@ -364,6 +399,54 @@ void Collider::drawInspector()
             RebuildShape();
         break;
     }
+    case ColliderType::Mesh:
+    {
+        // Тело должно быть Static
+        if (ImGui::Button("Build Mesh Collider"))
+        {
+            auto rb = gameObject->GetComponent<RigidBody>();
+            rb->bodyType = BodyType::Static;
+            
+            if (!rb || rb->bodyType == BodyType::Static)
+                RebuildShape();
+        }
+        break;
+    }
 
     }
+}
+
+void Collider::BuildFromMesh()
+{
+    if (!gameObject->GetComponent<MeshRenderer>()) return;
+
+    btTriangleMesh* triMesh = new btTriangleMesh();
+
+    for (const auto& submesh : gameObject->GetComponent<MeshRenderer>()->model->meshes)
+    {
+        const std::vector<Vertex>& vertices = submesh->vertices;
+        const std::vector<unsigned int>& indices = submesh->indices;
+
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            const glm::vec3& v0 = vertices[indices[i]].Position;
+            const glm::vec3& v1 = vertices[indices[i + 1]].Position;
+            const glm::vec3& v2 = vertices[indices[i + 2]].Position;
+
+            triMesh->addTriangle(
+                btVector3(v0.x, v0.y, v0.z),
+                btVector3(v1.x, v1.y, v1.z),
+                btVector3(v2.x, v2.y, v2.z)
+            );
+        }
+    }
+
+    shape = new btBvhTriangleMeshShape(triMesh, true);
+    
+   if (gameObject) {
+        if (auto rb = gameObject->GetComponent<RigidBody>()) {
+            rb->OnColliderChanged();
+        }
+    }
+    
 }

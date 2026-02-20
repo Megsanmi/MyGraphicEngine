@@ -133,57 +133,21 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 460");
 
     //вертикаьная синхр 
-    //glfwSwapInterval(1);
+    glfwSwapInterval(1);
+
 
     Scene scene(WIDTH, HEIGHT, shaderProgram);
     scene.window = window;
-    /*scene.camera = scene.Addobject("Camera")->AddComponent<Camera>(shaderProgram)->gameObject->GetComponent<Transform>();
 
-    scene.Addobject("Light")->AddComponent<Light>(scene.objects,shaderProgram);
-    scene.Addobject("Terrain")->AddComponent<Terrain>(shaderProgram);*/
-    scene.LoadScene();
+    bool sceneLoaded = false;
     
     
     double lastTime = glfwGetTime();
     int nbFrames = 0;
 
-    int gridSize = 15;     // Размер леса (10х10 деревьев)
-    float spacing = 60.0f;  // Расстояние между деревьями
-
-    //for (int x = 0; x < gridSize; x++) {
-    //    for (int z = 0; z < gridSize; z++) {
-    //        // Создаем уникальное имя для каждого дерева
-    //        std::string treeName = "Tree_" + std::to_string(x) + "_" + std::to_string(z);
-
-    //        // Добавляем объект в сцену
-    //        auto tree = scene.Addobject(treeName);
-
-    //        // Добавляем меш дерева (замени "assets/tree.obj" на свой путь)
-    //        tree->AddComponent<MeshRenderer>("assets/tree.glb", shaderProgram);
-
-    //        // Получаем компонент Transform и ставим дерево на позицию в сетке
-    //        Transform* trans = tree->GetComponent<Transform>();
-    //        if (trans) {
-    //            // Центрируем лес относительно нуля, вычитая половину общего размера
-    //            float posX = (x - gridSize / 2.0f) * spacing;
-    //            float posZ = (z - gridSize / 2.0f) * spacing;
-
-    //            trans->position = glm::vec3(posX, 0.0f, posZ);
-
-    //            // Немного рандома, чтобы лес выглядел естественнее
-    //            // (если хочешь идеально ровную сетку — удали эти строки)
-    //            float randomRotation = static_cast<float>(rand() % 360);
-    //            trans->scale = vec3(0.0005f);
-    //            trans->rotationEuler.x = -90;
-    //            trans->position.y = 10;
-    //            trans->rotationEuler.y = randomRotation;
-    //            trans->qrotation = glm::normalize(glm::quat(glm::radians(trans->rotationEuler)));
-    //        }
-    //    }
-    //}
-    
 
     while (!glfwWindowShouldClose(window)) {
+        
         
         //очистка окнна
 
@@ -286,7 +250,6 @@ int main() {
         ImGui::End();
         
         ImGui::Begin("Inspector");  
-
         if (selectedObjectIndex >= 0)
         {
 
@@ -356,6 +319,12 @@ int main() {
 
         glfwPollEvents();
         glfwSwapBuffers(window); 
+
+        if (!sceneLoaded)
+        {
+            scene.LoadScene();
+            sceneLoaded = true;
+        }
     }
 
     // 5. Очистка и завершение

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 
+
 void TerrainChunk::release(btDynamicsWorld* world) {
     if (world && body) {
         world->removeRigidBody(body);
@@ -23,7 +24,7 @@ Terrain::Terrain(Renderer::ShaderProgram& shader)
 Terrain::~Terrain() {
     for (auto& pair : chunks) {
         pair.second.release(gameObject->scene->dynamicsWorld);
-        delete pair.second.mesh;
+        //delete pair.second.mesh.get();
     }
     delete terrainModel;
 }
@@ -48,6 +49,7 @@ void Terrain::Update(float dt) {
 
     glm::ivec2 camChunk = worldToChunk(gameObject->scene->camera->position);
 
+
     
     for (int z = -viewDistance; z <= viewDistance; z++) {
         for (int x = -viewDistance; x <= viewDistance; x++) {
@@ -56,21 +58,21 @@ void Terrain::Update(float dt) {
     }
 
  
-    for (auto it = chunks.begin(); it != chunks.end(); ) {
+    for (auto it = chunks.begin(); it != chunks.end(); ) 
+    {
         glm::ivec2 c = it->second.coord;
         if (std::abs(c.x - camChunk.x) > viewDistance + 10 ||
             std::abs(c.y - camChunk.y) > viewDistance + 10) {
 
             TerrainChunk& chunk = it->second;
-
+       
+            gameObject->scene->dynamicsWorld->removeRigidBody(chunk.body);
 
             auto& mVec = terrainModel->meshes;
-            mVec.erase(std::remove_if(mVec.begin(), mVec.end(), [&](const Mesh& m) {
-                return m.VAO == chunk.mesh->VAO;
-                }), mVec.end());
+            terrainModel->meshes.erase(std::remove_if(mVec.begin(), mVec.end(), [&](const std::unique_ptr<Mesh>& m) {return m->VAO == chunk.meshPtr->VAO;}), mVec.end());
 
             chunk.release(gameObject->scene->dynamicsWorld);
-            delete chunk.mesh; 
+            
 
             it = chunks.erase(it);
         }
@@ -81,19 +83,31 @@ void Terrain::Update(float dt) {
 }
 
 void Terrain::loadChunk(int cx, int cz) {
+    
     long long key = getChunkKey(cx, cz);
     if (chunks.find(key) != chunks.end()) return;
-
+    
     TerrainChunk chunk;
     chunk.coord = { cx, cz };
     generateChunkMesh(cx, cz, chunk, m_lod);
-    chunks[key] = chunk;
+    chunks[key] = move(chunk);
 }
 
 float Terrain::getHeight(int x, int z) {
-    float freq = 0.05f;
-    float h = noise.noise2D(x * freq, z * freq);
-    return (h * 0.5f + 0.5f) * heightMultiplier;
+    float total = 0;
+    float frequency = 0.01f;
+    float amplitude = 1.0f;
+
+    for (int i = 0; i < 10; i++)
+    {
+        total += noise.noise2D(x * frequency, z * frequency) * amplitude;
+        frequency *= 2.0f;
+        amplitude *= 0.5f;
+    }
+
+    total = total * 0.5f + 0.5f;
+    return total * heightMultiplier;
+    
 }
 
 void Terrain::generateChunkMesh(int cx, int cz, TerrainChunk& outChunk,int lod) {
@@ -155,9 +169,12 @@ void Terrain::generateChunkMesh(int cx, int cz, TerrainChunk& outChunk,int lod) 
     gameObject->scene->dynamicsWorld->addRigidBody(outChunk.body);
 
     Texture tex{ textureID, "diffuseTexture", "" };
-    outChunk.mesh = new Mesh(vertices, indices, { tex });
 
-    terrainModel->meshes.push_back(*outChunk.mesh);
+    outChunk.mesh = std::make_unique<Mesh>(vertices, indices, std::vector<Texture>{ tex });
+
+    terrainModel->meshes.push_back(std::move(outChunk.mesh));
+
+    outChunk.meshPtr = terrainModel->meshes.back().get();
 }
 
 glm::ivec2 Terrain::worldToChunk(glm::vec3 worldPos) {
