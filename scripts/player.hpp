@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include "../Gameobjects/RigidBody.hpp"
 #include "../Gameobjects/Scene.hpp"
@@ -18,7 +17,7 @@ class CharacterController : public Component
 {
 public:
     // =========================
-    // ƒ¿ÕÕ€≈  ŒÃœŒÕ≈Õ“¿
+    // √Ñ√Ä√ç√ç√õ√Ö √ä√é√å√è√é√ç√Ö√ç√í√Ä
     // =========================
 
     GLFWwindow* window;
@@ -34,14 +33,14 @@ public:
     bool physicsCreated = false;
 
     // =========================
-    //  ŒÕ—“–” “Œ–
+    // √ä√é√ç√ë√í√ê√ì√ä√í√é√ê
     // =========================
 
     CharacterController() = default;
     ~CharacterController() override = default;
 
     // =========================
-    // ∆»«Õ≈ÕÕ€… ÷» À
+    // √Ü√à√á√ç√Ö√ç√ç√õ√â √ñ√à√ä√ã
     // =========================
 
     void Update(float dt)
@@ -92,7 +91,7 @@ public:
     
 
     // =========================
-    // —≈–»¿À»«¿÷»ﬂ
+    // √ë√Ö√ê√à√Ä√ã√à√á√Ä√ñ√à√ü
     // =========================
 
     json Serialize() override
