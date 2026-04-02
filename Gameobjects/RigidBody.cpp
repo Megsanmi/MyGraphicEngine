@@ -258,8 +258,8 @@ void Collider::Update(float dt)
 {
     if (drawColision)
     {
-        gameObject->scene->GlobalShaderProgram.setVec3("solidColor", glm::vec3(0, 1, 0));
-        gameObject->scene->GlobalShaderProgram.setMatrix4("model_matrix", glm::mat4(1));
+        gameObject->scene->GlobalShaderProgram->setVec3("solidColor", glm::vec3(0, 1, 0));
+        gameObject->scene->GlobalShaderProgram->setMatrix4("model_matrix", glm::mat4(1));
         if (gameObject->GetComponent<RigidBody>())
         {
             btTransform trans = gameObject->GetComponent<RigidBody>()->body->getWorldTransform();
@@ -267,7 +267,7 @@ void Collider::Update(float dt)
 
             gameObject->scene->debugDrawer->render(gameObject->scene->camera->gameObject->GetComponent<Camera>()->get_projection_matrix(), gameObject->scene->camera->gameObject->GetComponent<Camera>()->get_view_matrix());
         }
-        gameObject->scene->GlobalShaderProgram.setVec3("solidColor", glm::vec3(0.5, 0.5, 0.5));
+        gameObject->scene->GlobalShaderProgram->setVec3("solidColor", glm::vec3(0.5, 0.5, 0.5));
     }
 
 }
@@ -426,12 +426,14 @@ void Collider::BuildFromMesh()
     {
         const std::vector<Vertex>& vertices = submesh->vertices;
         const std::vector<unsigned int>& indices = submesh->indices;
-
+        mat4 transform = submesh->transform;
         for (size_t i = 0; i < indices.size(); i += 3)
         {
-            const glm::vec3& v0 = vertices[indices[i]].Position;
-            const glm::vec3& v1 = vertices[indices[i + 1]].Position;
-            const glm::vec3& v2 = vertices[indices[i + 2]].Position;
+
+
+            const glm::vec3& v0 = vec3(transform * vec4(vertices[indices[i]].Position,1));
+            const glm::vec3& v1 = vec3(transform * vec4(vertices[indices[i + 1]].Position,1));
+            const glm::vec3& v2 = vec3(transform * vec4(vertices[indices[i + 2]].Position,1));
 
             triMesh->addTriangle(
                 btVector3(v0.x, v0.y, v0.z),

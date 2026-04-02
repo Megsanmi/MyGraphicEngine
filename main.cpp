@@ -136,7 +136,7 @@ int main() {
     glfwSwapInterval(1);
 
 
-    Scene scene(WIDTH, HEIGHT, shaderProgram);
+    Scene scene(WIDTH, HEIGHT);
     scene.window = window;
 
     bool sceneLoaded = false;
@@ -180,7 +180,9 @@ int main() {
             {
                 ImGui::Text("Background color:");
                 ImGui::ColorEdit3("##background_color", window_color);
-                ImGui::Checkbox("perspective ",&perspective_camera);
+                ImGui::Text("fog distance:");
+                ImGui::DragFloat("fog Far", &scene.fogFar);
+                ImGui::DragFloat("fog Near", &scene.fogNear);
                 
                 ImGui::EndMenu();
             }
@@ -271,7 +273,7 @@ int main() {
             {
                 if (ImGui::Selectable("MeshRenderer"))
                 {
-                    obj->AddComponent<MeshRenderer>("/path", scene.GlobalShaderProgram);
+                    obj->AddComponent<MeshRenderer>(string("/path"), *scene.GlobalShaderProgram);
                 }
 
                 if (ImGui::Selectable("RigidBody"))
@@ -284,15 +286,15 @@ int main() {
                 }
                 if (ImGui::Selectable("Light"))
                 {
-                    Light* L = obj->AddComponent<Light>(scene.objects, scene.GlobalShaderProgram);
+                    Light* L = obj->AddComponent<Light>(scene.objects, *scene.GlobalShaderProgram);
                 }
                 if (ImGui::Selectable("Terrain"))
                 {
-                    Terrain* T = obj->AddComponent<Terrain>(scene.GlobalShaderProgram);
+                    Terrain* T = obj->AddComponent<Terrain>(*scene.GlobalShaderProgram);
                 }
                 if (ImGui::Selectable("ParticleSystem"))
                 {
-                    ParticleSystem* T = obj->AddComponent<ParticleSystem>(scene.GlobalShaderProgram);
+                    ParticleSystem* T = obj->AddComponent<ParticleSystem>(*scene.GlobalShaderProgram);
                 }
                 if (ImGui::Selectable("CharacterController"))
                 {
@@ -300,8 +302,9 @@ int main() {
                 }
                 if (ImGui::Selectable("Animator") && obj->GetComponent<MeshRenderer>())
                 {
-                    Animator* T = obj->AddComponent<Animator>(obj->GetComponent<MeshRenderer>()->model);
-                    T->PlayAnimation(0);
+                    Animator* T = obj->AddComponent<Animator>();
+                    T->OnEnable();
+                    
                 }
                 
 

@@ -147,6 +147,10 @@ public:
         transform->gameObject = this;  
         components.emplace_back(transform);
     }
+    ~GameObject()
+    {
+
+    }
 
 
     glm::mat4 GetWorldMatrix() const {
@@ -230,6 +234,13 @@ public:
         : shaderProgram(shader)
     {
         this->model = m;
+
+        m->ref++;
+    }
+
+    ~MeshRenderer()
+    {
+        model->ref--;
     }
     
     void SetUV(float u0, float v0, float u1, float v1)
@@ -240,7 +251,8 @@ public:
     void OnEnable() {
         if (gameObject->modelCache->count(path) > 0) {
             auto& cache = *gameObject->modelCache;
-            model = cache[path]; // Сразу отдаем готовую
+            model = cache[path];
+            model->ref++;
         }
         else
         {
@@ -249,6 +261,8 @@ public:
             auto& cache = *gameObject->modelCache;
 
             cache[path] = model;
+
+            model->ref++;
         }
     };
 
@@ -266,15 +280,16 @@ public:
             ImGui::Checkbox("enabled", &enabled);
             ImGui::Text(path.c_str());
             ImGui::Checkbox("isShaded", &isShaded);
-            ImGui::DragFloat3("Offset", &meshOffset.x,0.05);
+            ImGui::DragFloat3("Offset", &meshOffset.x,0.05f);
             ImGui::Checkbox("UseNormalMap", &UseNormalMap);
             ImGui::Checkbox("UseSolidColor", &UseSolidColor);
             //ImGui::ColorPicker4("SolidColor", &model->solidColor.x, 0.05);
         }
-
     };
 
     json Serialize() override {
+        
+
         return{
             {"type","MeshRenderer"},
             {"path",path},

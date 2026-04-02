@@ -15,6 +15,14 @@ public:
 	double lastY;
 	bool firstMouse = true;;
 
+	bool orbitMode = false;
+
+	glm::vec3 orbitTarget = glm::vec3(0.0f);
+	float orbitDistance = 10.0f;
+
+	float orbitYaw = 0.0f;
+	float orbitPitch = 0.0f;
+
 	Transform* T;
 
 	enum class ProjectionMode
@@ -28,7 +36,7 @@ public:
 
 	void OnEnable();
 	void OnDisable();
-	
+
 
 	void drawInspector()
 	{
@@ -50,14 +58,14 @@ public:
 
 	void set_projection_mode(const ProjectionMode projection_mode);
 	void process_input(GLFWwindow* window);
-
+	void process_orbit_input(GLFWwindow* window);
 
 
 private:
 	void update_veiw_matrix();
 	void update_projection_matrix();
 	float speed = 1.f;
-		
+
 	Renderer::ShaderProgram& shader;
 	ProjectionMode m_projection_mode;
 	glm::mat4 m_view_matrix;

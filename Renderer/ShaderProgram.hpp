@@ -32,7 +32,7 @@ namespace Renderer {
 		}
 		void setFloat(const std::string& name, GLint value)
 		{
-			glUniform1i(glGetUniformLocation(m_ID, name.c_str()), value);
+			glUniform1f(glGetUniformLocation(m_ID, name.c_str()), value);
 		}
 		
 		GLuint m_ID = 0;

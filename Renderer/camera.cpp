@@ -1,3 +1,4 @@
+
 #include "camera.hpp"
 #include <glm/trigonometric.hpp>
 #include <GLFW/glfw3.h> 
@@ -10,21 +11,20 @@
 Camera::Camera(Renderer::ShaderProgram& s, const ProjectionMode projection_mod)
 	: shader(s), m_projection_mode(projection_mod)
 {
-	
+
 }
 
 void Camera::UpdateCam(float dt)
 {
-	
+
 	if (escape)
 	{
-		// Если мы только что включили режим обзора
 		if (glfwGetInputMode(gameObject->scene->window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED) {
 			glfwSetInputMode(gameObject->scene->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-			// СБРОС: Считываем текущую позицию, чтобы не было прыжка
 			double xpos, ypos;
 			glfwGetCursorPos(gameObject->scene->window, &xpos, &ypos);
+
 			lastX = xpos;
 			lastY = ypos;
 		}
@@ -39,13 +39,19 @@ void Camera::UpdateCam(float dt)
 	{
 		escape = false;
 	}
+
 	if (glfwGetKey(gameObject->scene->window, GLFW_KEY_TAB) == GLFW_PRESS)
 	{
 		escape = true;
 	}
+
 	set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
 	shader.setMatrix4("view_projection_matrix", get_projection_matrix() * get_view_matrix());
 	shader.setVec3("cameraPos", T->position);
+
+	gameObject->scene->terrainShader->setMatrix4("view_projection_matrix", get_projection_matrix() * get_view_matrix());
+	gameObject->scene->terrainShader->setVec3("cameraPos", T->position);
+	
 	update_veiw_matrix();
 	update_projection_matrix();
 };
@@ -53,7 +59,7 @@ void Camera::UpdateCam(float dt)
 void Camera::OnEnable()
 {
 	T = gameObject->GetComponent<Transform>();
-	
+
 }
 void Camera::OnDisable()
 {
@@ -66,8 +72,8 @@ json Camera::Serialize()
 			{"m_projection_mode",m_projection_mode},
 			{"speed",speed}
 	};
-	
-	
+
+
 }
 void Camera::Deserialize(const json& j)
 {
@@ -78,40 +84,40 @@ void Camera::Deserialize(const json& j)
 
 void Camera::update_veiw_matrix()
 {
-float rx = -glm::radians(T->rotationEuler.x);
-float ry = -glm::radians(T->rotationEuler.y);
-float rz = -glm::radians(T->rotationEuler.z);
+	float rx = -glm::radians(T->rotationEuler.x);
+	float ry = -glm::radians(T->rotationEuler.y);
+	float rz = -glm::radians(T->rotationEuler.z);
 
-glm::mat4 rotate_matrix_x(
-    1, 0, 0, 0,
-    0, cos(rx), sin(rx), 0,
-    0, -sin(rx), cos(rx), 0,
-    0, 0, 0, 1
-);
+	glm::mat4 rotate_matrix_x(
+		1, 0, 0, 0,
+		0, cos(rx), sin(rx), 0,
+		0, -sin(rx), cos(rx), 0,
+		0, 0, 0, 1
+	);
 
-glm::mat4 rotate_matrix_y(
-    cos(ry), 0, -sin(ry), 0,
-    0, 1, 0, 0,
-    sin(ry), 0, cos(ry), 0,
-    0, 0, 0, 1
-);
+	glm::mat4 rotate_matrix_y(
+		cos(ry), 0, -sin(ry), 0,
+		0, 1, 0, 0,
+		sin(ry), 0, cos(ry), 0,
+		0, 0, 0, 1
+	);
 
-glm::mat4 rotate_matrix_z(
-    cos(rz), sin(rz), 0, 0,
-    -sin(rz), cos(rz), 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1
-);
+	glm::mat4 rotate_matrix_z(
+		cos(rz), sin(rz), 0, 0,
+		-sin(rz), cos(rz), 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	);
 
-glm::mat4 translate_matrix(
-    1.f, 0, 0, 0,
-    0, 1.f, 0, 0,
-    0, 0, 1.f, 0,
-    -T->position.x, -T->position.y, -T->position.z, 1.0f
-);
+	glm::mat4 translate_matrix(
+		1.f, 0, 0, 0,
+		0, 1.f, 0, 0,
+		0, 0, 1.f, 0,
+		-T->position.x, -T->position.y, -T->position.z, 1.0f
+	);
 
-m_view_matrix = rotate_matrix_x * rotate_matrix_y * rotate_matrix_z * translate_matrix;
-}	
+	m_view_matrix = rotate_matrix_x * rotate_matrix_y * rotate_matrix_z * translate_matrix;
+}
 
 void Camera::update_projection_matrix()
 {
@@ -127,12 +133,12 @@ void Camera::update_projection_matrix()
 			0, 0, -(f + n) / (f - n), -1,
 			0, 0, -2 * f * n / (f - n), 0
 		);
-			
+
 	}
-	else 
+	else
 	{
-		float r = 1.6f*1.5;
-		float t = 0.9f*1.5;
+		float r = 1.6f * 1.5;
+		float t = 0.9f * 1.5;
 		float f = 100;
 		float n = 0.1f;
 		m_projection_matrix = glm::mat4(
@@ -144,7 +150,7 @@ void Camera::update_projection_matrix()
 
 	};
 }
-	
+
 void Camera::set_position(const glm::vec3& position)
 {
 	T->position = position;
@@ -174,7 +180,7 @@ void Camera::process_input(GLFWwindow* window)
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 
-	// Если это самый первый кадр работы камеры
+	
 	if (firstMouse)
 	{
 		lastX = xpos;
@@ -182,9 +188,9 @@ void Camera::process_input(GLFWwindow* window)
 		firstMouse = false;
 	}
 
-	// Считаем смещение
-	double xoffset = lastX - xpos; // Стандарт: текущее минус прошлое
-	double yoffset = lastY - ypos; // Инвертируем Y, так как координаты экрана идут сверху вниз
+	
+	double xoffset = lastX - xpos; 
+	double yoffset = lastY - ypos; 
 
 	lastX = xpos;
 	lastY = ypos;
@@ -193,18 +199,16 @@ void Camera::process_input(GLFWwindow* window)
 	xoffset *= sensitivity;
 	yoffset *= sensitivity;
 
-	// Обновляем вращение (Y - это Yaw, X - это Pitch)
+
 	T->rotationEuler.y += (float)xoffset;
 	T->rotationEuler.x += (float)yoffset;
-
-	// Ограничение по вертикали
+	 
 	if (T->rotationEuler.x > 89.0f) T->rotationEuler.x = 89.0f;
 	if (T->rotationEuler.x < -89.0f) T->rotationEuler.x = -89.0f;
 
 	float yaw = glm::radians(T->rotationEuler.y);
 	float pitch = glm::radians(T->rotationEuler.x);
 
-	// Вектор направления
 	glm::vec3 forward(
 		-sin(yaw),
 		0,
@@ -219,18 +223,17 @@ void Camera::process_input(GLFWwindow* window)
 
 	glm::vec3 up(0, 0.5f, 0);
 
-	
-		
+
+
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) T->position += forward * speed;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) T->position -= forward * speed;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) T->position += right * speed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) T->position -= right * speed;
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) T->position += up * speed;
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) T->position -= up * speed;
-		
 
-		
+
+
 	update_veiw_matrix();
 }
-		
 

@@ -13,26 +13,29 @@
 #include "../scripts/player.hpp"
 #include "Animator.hpp"
 
-Scene::Scene(int w, int h, Renderer::ShaderProgram& shaderProgram) : GlobalShaderProgram(shaderProgram), width(w), height(h)
+
+
+Scene::Scene(int w, int h) : width(w), height(h)
 {
 	ShadowShader = new  Renderer::ShaderProgram(vsBuffer,fsBuffer);
-
+	terrainShader = new  Renderer::ShaderProgram(textFromfile("Shaders/terrainShaderV.glsl"), textFromfile("Shaders/terrainShaderF.glsl"));
+	GlobalShaderProgram =  new  Renderer::ShaderProgram(textFromfile("Shaders/vertex_shader.glsl"), textFromfile("Shaders/fragment_shader.glsl"));
 	InitPhysics();
 }
 
 void Scene::shadowRender()
 {
-	GlobalShaderProgram.use();
-	GlobalShaderProgram.setInt("lightCount", lights.size());
+	GlobalShaderProgram->use();
+	GlobalShaderProgram->setInt("lightCount", lights.size());
 
 	for (unsigned int i = 0;i < lights.size(); i++)
 	{
 		lights[i]->Shadowmap->bindDepthTexture(lights[i]->Shadowmap->getDepthTex());
-		GlobalShaderProgram.setMatrix4(("lightSpaceMatrices[" + std::to_string(i) + "]").c_str(), lights[i]->getLightSpaceMatrix());
-		GlobalShaderProgram.setInt("shadowMaps[" + std::to_string(i) + "]", lights[i]->Shadowmap->getDepthTex());
-		GlobalShaderProgram.setVec3("light_directions[" + std::to_string(i) + "]", lights[i]->lightDir);
-		GlobalShaderProgram.setVec3("light_color", lights[i]->color);
-		GlobalShaderProgram.setVec3("ambient_color", lights[i]->ambient);
+		GlobalShaderProgram->setMatrix4(("lightSpaceMatrices[" + std::to_string(i) + "]").c_str(), lights[i]->getLightSpaceMatrix());
+		GlobalShaderProgram->setInt("shadowMaps[" + std::to_string(i) + "]", lights[i]->Shadowmap->getDepthTex());
+		GlobalShaderProgram->setVec3("light_directions[" + std::to_string(i) + "]", lights[i]->lightDir);
+		GlobalShaderProgram->setVec3("light_color", lights[i]->color);
+		GlobalShaderProgram->setVec3("ambient_color", lights[i]->ambient);
 	};
 
 	for (auto& obj : objects)
@@ -77,12 +80,33 @@ void Scene::DeleteObject(int index)
 
 void Scene::Update(float dt)
 {
+	// SET RENDER SETTINGS
+	GlobalShaderProgram->setVec3("fogColor", glm::vec3(0.7f, 0.8f, 0.9f)); // например небо
+	GlobalShaderProgram->setFloat("fogNear", fogNear);
+	GlobalShaderProgram->setFloat("fogFar", fogFar);
+
+
+
+
+	for (auto it = modelCache.begin(); it != modelCache.end(); )
+	{
+		if (it->second->ref == 0)
+		{
+			delete it->second;
+			it = modelCache.erase(it); 
+		}
+		else
+		{
+			++it;
+		}
+	}
+
 	for (auto& obj : objects)
 	{
 		if (auto rb = obj->GetComponent<RigidBody>())
 		{
 			rb->SyncTransformToPhysics();
-
+         
 		}
 	}
 	dynamicsWorld->stepSimulation(dt, 10);
@@ -98,17 +122,24 @@ void Scene::Update(float dt)
 				rb->body->activate();
 			}
 		}
+		
 	}
 
-	shadowRender();
 	
 	for (auto& obj : objects)
 	{
+		if (auto animator = obj->GetComponent<Animator>())
+		{
+			animator->UpdateAnim(0.01f);
+		}
+
 		obj->Update(dt);
 	}
-	
+
+	shadowRender();
+
 	if(camera)
-		camera->gameObject->GetComponent<Camera>()->UpdateCam(0.13);
+		camera->gameObject->GetComponent<Camera>()->UpdateCam(0.13f);
 }
 
 void Scene::InitPhysics()
@@ -125,7 +156,7 @@ void Scene::InitPhysics()
 	
 	dynamicsWorld->setGravity(btVector3(0, -9.81f, 0));
 
-	debugDrawer = new MyDebugDrawer(GlobalShaderProgram);
+	debugDrawer = new MyDebugDrawer(*GlobalShaderProgram);
 	debugDrawer->init();
 	dynamicsWorld->setDebugDrawer(debugDrawer);
 }
@@ -134,6 +165,7 @@ json Scene::SaveScene()
 {
 	json scene;
 	scene["IDs"] = IDs;
+
 	for (auto& obj : objects) {
 		json jObj;
 		jObj["name"] = obj->name;
@@ -150,6 +182,14 @@ json Scene::SaveScene()
 
 		scene["objects"].push_back(jObj);
 	};
+
+	json renderSettings;
+	renderSettings["fogFar"] = fogFar;
+	renderSettings["fogNear"] = fogNear;
+
+
+	scene["renderSettings"] = renderSettings;
+
 	ofstream ofs("scene.json");
 	ofs << scene.dump();
 	return scene;
@@ -170,9 +210,10 @@ void Scene::LoadScene() {
 
 		
 		objects.push_back(LoadGameObject(obj));
-		
+		 
 		
 	}
+
 	for (auto& objJson : j["objects"]) {
 		if (objJson.contains("parentID")) {
 			int currentID = objJson["ID"];
@@ -188,6 +229,9 @@ void Scene::LoadScene() {
 			}
 		}
 	}
+
+	if (j.contains("renderSettings")) fogFar = j["renderSettings"]["fogFar"];
+	if (j.contains("renderSettings")) fogNear = j["renderSettings"]["fogNear"];
 }
 
 void Scene::clear()
@@ -239,18 +283,18 @@ std::unique_ptr<GameObject> Scene::LoadGameObject(const json& j)
 
 		else if (type == "MeshRenderer" && !obj->GetComponent<MeshRenderer>())
 		{
-			MeshRenderer* mr = obj->AddComponent<MeshRenderer>(c["path"], GlobalShaderProgram);
+			MeshRenderer* mr = obj->AddComponent<MeshRenderer>(c["path"], *terrainShader);;
 			mr->Deserialize(c);
 		}
 
 		else if (type == "Light")
 		{
-			Light* L = obj->AddComponent<Light>(objects, GlobalShaderProgram);
+			Light* L = obj->AddComponent<Light>(objects, *GlobalShaderProgram);
 			L->Deserialize(c);
 		}
 		else if (type == "Terrain")
 		{
-			Terrain* T = obj->AddComponent<Terrain>(GlobalShaderProgram);
+			Terrain* T = obj->AddComponent<Terrain>(*GlobalShaderProgram);
 			T->Deserialize(c);
 			T->OnEnable();
 		}
@@ -275,13 +319,19 @@ std::unique_ptr<GameObject> Scene::LoadGameObject(const json& j)
 		}
 		else if (type == "Camera")
 		{
-			Camera* T = obj->AddComponent<Camera>(GlobalShaderProgram);
+			Camera* T = obj->AddComponent<Camera>(*GlobalShaderProgram);
 			T->Deserialize(c);
 			T->OnEnable();
 		}
 		else if (type == "ParticleSystem")
 		{
-			ParticleSystem* T = obj->AddComponent<ParticleSystem>(GlobalShaderProgram);
+			ParticleSystem* T = obj->AddComponent<ParticleSystem>(*GlobalShaderProgram);
+			T->Deserialize(c);
+			T->OnEnable();
+		}
+		else if (type == "Animator")
+		{
+			Animator* T = obj->AddComponent<Animator>();
 			T->Deserialize(c);
 			T->OnEnable();
 		}

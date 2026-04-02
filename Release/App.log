@@ -1,34 +1,90 @@
 ﻿  Проверка источников на наличие зависимостей модуля…
+  Animator.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
+  (компиляция исходного файла "Gameobjects/Animator.cpp")
+  
+E:\Projects\Проект\App1\App\Gameobjects\Animator.cpp(35,28): warning C4018: >=: несоответствие типов со знаком и без знака
+  Mesh.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
+  (компиляция исходного файла "Gameobjects/Mesh.cpp")
+  
+E:\Projects\Проект\App1\App\Gameobjects\Mesh.cpp(84,48): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
+E:\Projects\Проект\App1\App\Gameobjects\Mesh.cpp(85,49): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
+E:\Projects\Проект\App1\App\Gameobjects\Mesh.cpp(87,42): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
   RigidBody.cpp
-E:\Projects\Проект\App1\App\Gameobjects\GameObject.hpp(270,55): warning C4305: аргумент: усечение из "double" в "float"
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
   (компиляция исходного файла "Gameobjects/RigidBody.cpp")
   
-E:\Projects\Проект\App1\App\Renderer\camera.hpp(38,38): warning C4305: аргумент: усечение из "double" в "float"
+E:\Projects\Проект\App1\App\Renderer\camera.hpp(46,38): warning C4305: аргумент: усечение из "double" в "float"
   (компиляция исходного файла "Gameobjects/RigidBody.cpp")
-  
-E:\Projects\Проект\App1\App\Gameobjects\Mesh.hpp(61,27): warning C4018: <: несоответствие типов со знаком и без знака
-  (компиляция исходного файла "Gameobjects/RigidBody.cpp")
-      E:\Projects\Проект\App1\App\Gameobjects\Mesh.hpp(61,27):
-      контекст создания экземпляра шаблона (сначала самый старый)
-          E:\Projects\Проект\App1\App\Gameobjects\Mesh.hpp(71,18):
-          выполняется компиляция ссылки на экземпляр шаблон функции "int BoneAnimation::GetKeyIndex<VectorKey>(float,const std::vector<VectorKey,std::allocator<VectorKey>> &) const"
   
   RigidBody.hpp
-E:\Projects\Проект\App1\App\Gameobjects\GameObject.hpp(270,55): warning C4305: аргумент: усечение из "double" в "float"
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
   (компиляция исходного файла "Gameobjects/RigidBody.hpp")
   
-E:\Projects\Проект\App1\App\Gameobjects\Mesh.hpp(61,27): warning C4018: <: несоответствие типов со знаком и без знака
-  (компиляция исходного файла "Gameobjects/RigidBody.hpp")
-      E:\Projects\Проект\App1\App\Gameobjects\Mesh.hpp(61,27):
-      контекст создания экземпляра шаблона (сначала самый старый)
-          E:\Projects\Проект\App1\App\Gameobjects\Mesh.hpp(71,18):
-          выполняется компиляция ссылки на экземпляр шаблон функции "int BoneAnimation::GetKeyIndex<VectorKey>(float,const std::vector<VectorKey,std::allocator<VectorKey>> &) const"
+  Terrain.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
+  (компиляция исходного файла "Gameobjects/Terrain.cpp")
   
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.hpp(86,56): warning C4305: аргумент: усечение из "double" в "float"
+  (компиляция исходного файла "Gameobjects/Terrain.cpp")
+  
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.cpp(126,26): warning C4244: инициализация: преобразование "int" в "float", возможна потеря данных
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.cpp(127,26): warning C4244: инициализация: преобразование "int" в "float", возможна потеря данных
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.cpp(209,17): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.cpp(218,22): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.cpp(229,17): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.cpp(243,13): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+  particle.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
+  (компиляция исходного файла "Gameobjects/particle.cpp")
+  
+  scene.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
+  (компиляция исходного файла "Gameobjects/scene.cpp")
+  
+E:\Projects\Проект\App1\App\Renderer\camera.hpp(46,38): warning C4305: аргумент: усечение из "double" в "float"
+  (компиляция исходного файла "Gameobjects/scene.cpp")
+  
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.hpp(86,56): warning C4305: аргумент: усечение из "double" в "float"
+  (компиляция исходного файла "Gameobjects/scene.cpp")
+  
+E:\Projects\Проект\App1\App\Gameobjects\scene.cpp(69,25): warning C4018: >=: несоответствие типов со знаком и без знака
+E:\Projects\Проект\App1\App\Gameobjects\scene.cpp(85,43): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
+E:\Projects\Проект\App1\App\Gameobjects\scene.cpp(86,42): warning C4244: аргумент: преобразование "float" в "GLint", возможна потеря данных
+  camera.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
+  (компиляция исходного файла "Renderer/camera.cpp")
+  
+E:\Projects\Проект\App1\App\Renderer\camera.hpp(46,38): warning C4305: аргумент: усечение из "double" в "float"
+  (компиляция исходного файла "Renderer/camera.cpp")
+  
+E:\Projects\Проект\App1\App\Renderer\camera.cpp(140,11): warning C4305: инициализация: усечение из "double" в "float"
+E:\Projects\Проект\App1\App\Renderer\camera.cpp(141,11): warning C4305: инициализация: усечение из "double" в "float"
+  light.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
+  (компиляция исходного файла "Renderer/light.cpp")
+  
+  main.cpp
+E:\Projects\Проект\App1\App\Renderer\ShaderProgram.hpp(35,58): warning C4244: аргумент: преобразование "GLint" в "GLfloat", возможна потеря данных
+  (компиляция исходного файла "main.cpp")
+  
+E:\Projects\Проект\App1\App\Renderer\camera.hpp(46,38): warning C4305: аргумент: усечение из "double" в "float"
+  (компиляция исходного файла "main.cpp")
+  
+E:\Projects\Проект\App1\App\Gameobjects\sprite.hpp(65,18): warning C4305: +=: усечение из "double" в "float"
+  (компиляция исходного файла "main.cpp")
+  
+E:\Projects\Проект\App1\App\Gameobjects\Terrain.hpp(86,56): warning C4305: аргумент: усечение из "double" в "float"
+  (компиляция исходного файла "main.cpp")
+  
+E:\Projects\Проект\App1\App\main.cpp(223,31): warning C4018: <: несоответствие типов со знаком и без знака
+E:\Projects\Проект\App1\App\main.cpp(317,22): warning C4305: аргумент: усечение из "double" в "float"
 Release\DebugDraw.obj : warning LNK4042: объект указан более одного раза; лишние не учитываются
 Release\RigidBody.obj : warning LNK4042: объект указан более одного раза; лишние не учитываются
   Создание кода
-  0 of 6937 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+  5 of 7182 functions (<0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    66 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   App.vcxproj -> E:\Projects\Проект\App1\Release\MyEngine.exe

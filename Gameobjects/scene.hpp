@@ -5,6 +5,9 @@
 #include <fstream>
 #include "DebugDraw.hpp"
 
+#include <fstream>
+#include <sstream>
+
 class Light;
 class btDefaultCollisionConfiguration;
 class btCollisionDispatcher;
@@ -17,7 +20,9 @@ using namespace nlohmann;
 class Scene {
 public:
 	Renderer::ShaderProgram* ShadowShader;
-	Renderer::ShaderProgram& GlobalShaderProgram;//глобальный шейдер для сцены(по надобности можно сделать несколько шейдеров)
+	Renderer::ShaderProgram* terrainShader;
+	Renderer::ShaderProgram* GlobalShaderProgram;//глобальный шейдер для сцены(по надобности можно сделать несколько шейдеров)
+
 	GLFWwindow* window;
 	MyDebugDrawer* debugDrawer;
 
@@ -38,7 +43,13 @@ public:
 	btSequentialImpulseConstraintSolver* solver = nullptr;
 	btDiscreteDynamicsWorld* dynamicsWorld = nullptr; 
 
-	Scene(int w, int h, Renderer::ShaderProgram& shaderProgram);
+	//                     RENDER SETTINGS
+	float fogFar = 200.f;
+	float fogNear = 50.f;
+
+
+
+	Scene(int w, int h);
 
 	void shadowRender();
 ;
@@ -78,6 +89,24 @@ public:
 	//Загрузка объекта и всех его компонентов 
 	std::unique_ptr<GameObject> LoadGameObject(const json& j);
 
+
+	string textFromfile( string path)
+	{
+		std::ifstream shader_path(path);
+		std::string shader = "NO FRAGMENT SHADER";
+
+		if (shader_path.is_open()) {
+			std::stringstream buffer;
+			buffer << shader_path.rdbuf();
+			shader = buffer.str();
+			shader_path.close();
+		}
+		else {
+			std::cerr << "Cant open file " << path << std::endl;
+		}
+
+		return shader;
+	}
 private:
 
 	const char* vsBuffer = R"(
@@ -92,23 +121,25 @@ out vec2 vUv;
 
 uniform mat4 bones[100];
 uniform mat4 model_matrix;
+uniform mat4 mesh_matrix;
 uniform mat4 lightSpaceMatrix;
 uniform bool useSkinning = false;
 
 void main()
 {
     vUv = aUv;
-    mat4 skin = mat4(1.0);
-    
+
+    vec4 skinnedPos = vec4(vertex_position, 1.0);
+
     if(useSkinning)
     {
-        skin = bones[aBoneIDs.x] * aWeights.x + 
-               bones[aBoneIDs.y] * aWeights.y + 
-               bones[aBoneIDs.z] * aWeights.z + 
-               bones[aBoneIDs.w] * aWeights.w;
+        skinnedPos = bones[aBoneIDs.x] * vec4(vertex_position,1.0) * aWeights.x +
+                     bones[aBoneIDs.y] * vec4(vertex_position,1.0) * aWeights.y +
+                     bones[aBoneIDs.z] * vec4(vertex_position,1.0) * aWeights.z +
+                     bones[aBoneIDs.w] * vec4(vertex_position,1.0) * aWeights.w;
     }
 
-    gl_Position = lightSpaceMatrix * model_matrix * skin * vec4(vertex_position, 1.0);
+    gl_Position = lightSpaceMatrix * model_matrix * mesh_matrix * skinnedPos;
 }
 )";
 

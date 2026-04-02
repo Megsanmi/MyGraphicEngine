@@ -1,5 +1,6 @@
 #include "light.hpp"
 #include "../Gameobjects/scene.hpp"
+#include "../Gameobjects/Animator.hpp"
 
 Light::Light(std::vector<std::unique_ptr<GameObject>>& objects, Renderer::ShaderProgram& s)
     :m_objects(objects),
@@ -49,6 +50,7 @@ void Light::drawInspector()
         ImGui::Checkbox("enabled", &enabled);
         ImGui::DragFloat2("shadow zone: ", &planeW, 0.1f);
         ImGui::ColorEdit3("Color light", &color.x);
+        ImGui::ColorEdit3("Color ambient", &ambient.x);
         ImGui::Checkbox("Draw shadow plane", &drawPlane);
         ImGui::DragInt("map size: ", &mapSize);
         if (ImGui::Button("Resize Map")) Shadowmap = new ShadowMap(*gameObject->scene->ShadowShader, mapSize, mapSize);
@@ -132,6 +134,10 @@ void Light::drawShade()
     
     for (auto& obj : m_objects)
     {
+        if (auto animator = obj->GetComponent<Animator>())
+        {
+            animator->setMat();
+        }
         auto mesh = obj->GetComponent<MeshRenderer>();
         if (mesh && mesh->isShaded) mesh->Draw(Shadowmap->getShader());
             

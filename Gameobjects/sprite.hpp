@@ -16,7 +16,7 @@ class Sprite : public Component
 {
 public:
     Model* model;
-    std::vector<Texture> textures;
+    std::vector<Texture*> textures;
 
     int columns = 8;
     int rows = 12;
@@ -37,9 +37,9 @@ public:
 
     void OnEnable() override
     {
-        Texture texture;
-        texture.id = model->TextureFromFile("textures/anim.jpg", "assets", false);
-        texture.type = "texture_diffuse";
+        Texture* texture;
+        texture->id = model->TextureFromFile("textures/anim.jpg", "assets", false);
+        texture->type = "texture_diffuse";
         textures.push_back(texture);
         model = new Model(vertices, indices, textures);
 

@@ -2,7 +2,6 @@ e:\projects\проект\app1\app\release\vc143.pdb
 e:\projects\проект\app1\app\release\light.obj
 e:\projects\проект\app1\app\release\camera.obj
 e:\projects\проект\app1\app\release\stb_image.obj
-e:\projects\проект\app1\app\release\mesh.obj
 e:\projects\проект\app1\app\release\imgui_widgets.obj
 e:\projects\проект\app1\app\release\imgui_tables.obj
 e:\projects\проект\app1\app\release\imgui_impl_opengl3.obj
@@ -25,11 +24,12 @@ e:\projects\проект\app1\app\release\glm.cppm.ifc.d.json
 e:\projects\проект\app1\app\release\glm.cppm.obj
 e:\projects\проект\app1\app\release\glad.obj
 e:\projects\проект\app1\app\release\clew.obj
+e:\projects\проект\app1\app\release\mesh.obj
+e:\projects\проект\app1\release\myengine.exe
+e:\projects\проект\app1\release\myengine.pdb
 e:\projects\проект\app1\app\release\glm.cppm.module.json
 e:\projects\проект\app1\app\release\myengine.ipdb
 e:\projects\проект\app1\app\release\myengine.iobj
-e:\projects\проект\app1\release\myengine.pdb
-e:\projects\проект\app1\release\myengine.exe
 e:\projects\проект\app1\app\release\myengine.tlog\cl.command.1.tlog
 e:\projects\проект\app1\app\release\myengine.tlog\cl.items.tlog
 e:\projects\проект\app1\app\release\myengine.tlog\cl.read.1.tlog

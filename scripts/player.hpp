@@ -17,9 +17,7 @@ using json = nlohmann::json;
 class CharacterController : public Component
 {
 public:
-    // =========================
-    // ÄÀÍÍÛÅ ÊÎÌÏÎÍÅÍÒÀ
-    // =========================
+    
 
     GLFWwindow* window;
 
@@ -33,23 +31,18 @@ public:
     float height = 4.f;
     bool physicsCreated = false;
 
-    // =========================
-    // ÊÎÍÑÒÐÓÊÒÎÐ
-    // =========================
 
     CharacterController() = default;
     ~CharacterController() override = default;
 
-    // =========================
-    // ÆÈÇÍÅÍÍÛÉ ÖÈÊË
-    // =========================
+ 
 
     void Update(float dt)
     {
-        gameObject->scene->camera->position = gameObject->GetComponent<Transform>()->position+vec3(0,height,0);
+        gameObject->scene->camera->position = gameObject->GetComponent<Transform>()->position + vec3(0, height, 0);
         float cameraYaw = gameObject->scene->camera->rotationEuler.y;
         btQuaternion rot;
-        rot.setEuler(glm::radians(cameraYaw), 0, 0); 
+        rot.setEuler(glm::radians(cameraYaw), 0, 0);
 
         btTransform worldTrans = ghostObject->getWorldTransform();
 
@@ -57,12 +50,12 @@ public:
         ghostObject->setWorldTransform(worldTrans);
 
         glm::vec3 inputDir = GetInputDirection();
-        
+
         glm::mat4 rotationMat = glm::rotate(glm::mat4(1.0f), glm::radians(cameraYaw), glm::vec3(0, 1, 0));
         inputDir = glm::vec3(rotationMat * glm::vec4(inputDir, 1.0f));
 
         Move(inputDir, dt);
-      
+
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
             Jump();
 
@@ -84,16 +77,14 @@ public:
 
         delete controller;
         delete ghostObject;
-        
+
         controller = nullptr;
         ghostObject = nullptr;
         physicsCreated = false;
     }
-    
 
-    // =========================
-    // ÑÅÐÈÀËÈÇÀÖÈß
-    // =========================
+
+   
 
     json Serialize() override
     {
@@ -146,7 +137,7 @@ public:
         ghostObject->setCollisionShape(convexShape);
         ghostObject->setCollisionFlags(btCollisionObject::CF_CHARACTER_OBJECT);
 
-        
+
 
         controller = new btKinematicCharacterController(ghostObject, convexShape, stepHeight);
         scene->dynamicsWorld->addCollisionObject(
@@ -157,7 +148,7 @@ public:
         scene->dynamicsWorld->addAction(controller);
 
         physicsCreated = true;
-        controller->setGravity(btVector3(0,-20,0));
+        controller->setGravity(btVector3(0, -20, 0));
     }
 
     void Jump() {
@@ -167,21 +158,21 @@ public:
 
     void Move(const glm::vec3& direction, float dt) {
         if (!controller) return;
-        btVector3 walkDir(direction.x * speed * dt , 0, direction.z * speed * dt);
+        btVector3 walkDir(direction.x * speed * dt, 0, direction.z * speed * dt);
         controller->setWalkDirection(walkDir);
     }
 
-    vec3 GetInputDirection() 
+    vec3 GetInputDirection()
     {
         vec3 moveDir = vec3(0);
-       
+
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) moveDir.z -= 1;
 
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) moveDir.z += 1;
-        
+
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) moveDir.x += 1;
-        
+
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) moveDir.x -= 1;
         return moveDir;
     };

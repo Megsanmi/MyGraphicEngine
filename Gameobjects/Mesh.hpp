@@ -14,6 +14,8 @@
 #include <unordered_map>
 #include <ext.hpp>
 #include <memory>
+#include <ext/matrix_transform.hpp>
+#include <iostream>
 
 
 using namespace std;
@@ -58,7 +60,7 @@ private:
     
     template<typename T>
     int GetKeyIndex(float time, const std::vector<T>& container) const {
-        for (int i = 0; i < container.size() - 1; ++i) {
+        for (unsigned int i = 0; i < container.size() - 1; ++i) {
             if (time < container[i + 1].time) return i;
         }
         return 0;
@@ -133,7 +135,23 @@ struct Skeleton {
 };
 
 
-class Mesh {
+struct Material
+{
+    glm::vec3 albedo = glm::vec3(1.0f);
+    float metallic = 0.0f;
+    float roughness = 1.0f;
+    float ao = 0.0f;
+    float alpha = 1.0f;
+
+    bool hasAlbedoMap = false;
+    bool hasNormalMap = false;
+    bool hasMetallicMap = false;
+    bool hasRoughnessMap = false;
+    bool hasMaterialAlpha = false;
+};
+
+class Mesh 
+{
 public:
     Mesh(const Mesh&) = delete;
     Mesh& operator=(const Mesh&) = delete;
@@ -144,22 +162,19 @@ public:
     // Mesh-данные
     vector<Vertex>       vertices;
     vector<unsigned int> indices;
-    vector<Texture>      textures;
-    glm::vec4 BaseColor;
-    
+    vector<Texture*>      textures;
+    glm::mat4 transform;
 
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures);
+    Material material;
+
+    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture*> textures, glm::mat4 transform = glm::mat4(1));
     ~Mesh()
     {
+       
         if (EBO) glDeleteBuffers(1, &EBO);
         if (VBO) glDeleteBuffers(1, &VBO);
         if (VAO) glDeleteVertexArrays(1, &VAO);
 
-        //for (auto& tex : textures)
-        //{
-        //    if (tex.id)
-        //        glDeleteTextures(1, &tex.id);
-        //}
     }
     void SetUV(float u0, float v0, float u1, float v1);
     void Draw(Renderer::ShaderProgram& shader);
@@ -182,9 +197,7 @@ public:
 
     std::vector<std::unique_ptr<Mesh>> meshes;
     Skeleton skeleton;
-
-    bool useSolidColor = false;  
-
+    int ref = 0;
 
     vector<Bone> bones;
     std::vector<Animation> animations;
@@ -192,6 +205,8 @@ public:
     glm::mat4 m_GlobalInverseTransform;
     std::vector<glm::mat4> finalBoneMatrices;
 
+    std::unordered_map<string, Texture*> textureCache;
+    
     Model() {}
     Model(std::string path)
     {
@@ -200,9 +215,22 @@ public:
 
     Model(vector<Vertex> vertices,
         vector<unsigned int> indices,
-        vector<Texture> textures)
+        vector<Texture*> textures)
     {
         meshes.emplace_back(std::make_unique<Mesh>(vertices, indices, textures));
+    };
+    ~Model()
+    {
+        for(auto& m : meshes)
+        {
+            for (auto& tex : m->textures)
+            {
+                if (tex->id)
+                    glDeleteTextures(1, &tex->id);
+            }
+
+           
+        }
     };
 
     void SetUV(float u0, float v0, float u1, float v1);
@@ -236,9 +264,9 @@ public:
         boneMap[name] = bone.ID;
         return bone.ID;
     };
+
 private:
     string directory = "Assets";
-
 
     glm::mat4 ConvertMatrix(const aiMatrix4x4& from) {
         glm::mat4 to;
@@ -252,8 +280,8 @@ private:
     void ExtractSkeleton(aiNode* node, int parentIndex);
     void LoadAnimationsFromAssimp(const aiScene* scene);
     void loadModel(string path);
-    void processNode(aiNode* node, const aiScene* scene);
-    std::unique_ptr<Mesh> processMesh(aiMesh* mesh, const aiScene* scene);
-    vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName, const aiScene* scene);
+    void processNode(aiNode* node, const aiScene* scene, glm::mat4 parentTransform);
+    std::unique_ptr<Mesh> processMesh(aiMesh* mesh, const aiScene* scene, glm::mat4 transform);
+    vector<Texture*> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
 };
 
