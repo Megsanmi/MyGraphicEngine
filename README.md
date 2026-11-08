@@ -18,7 +18,7 @@
 
 * **Custom OpenGL Rendering Pipeline:** Core systems written using modern OpenGL buffers, shaders, and custom state management.
 * **Advanced Shadow Mapping:** Support for dynamic shadow rendering with optimized light-space calculations.
-* **Physics Integration:** Direct bindings and integration with modern physics backends (**Jolt** / **Bullet**) for rigid body dynamics and collision response.
+* **Physics Integration:** Direct bindings and integration with modern physics backends (**Bullet**) for rigid body dynamics and collision response.
 * **Low-Level Architecture:** Built with a focus on custom math frameworks, memory layout optimization, and clean component decoupling.
 
 ---
@@ -27,5 +27,5 @@
 
 * **Language:** C++ (Standard 20+)
 * **Graphics API:** OpenGL 4.6
-* **Physics:** Jolt Physics / Bullet Physics
+* **Physics:**  Bullet Physics
 * **Math / Utilities:** Custom zero-dependency mathematical structures and linear algebra wrappers.
