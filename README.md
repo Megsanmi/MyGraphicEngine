@@ -18,7 +18,6 @@
 
 * **Custom OpenGL Rendering Pipeline:** Core systems written using modern OpenGL buffers, shaders, and custom state management.
 * **Advanced Shadow Mapping:** Support for dynamic shadow rendering with optimized light-space calculations.
-* **Spatial Acceleration (BVH):** Implementation of a Bounding Volume Hierarchy tree for efficient ray-object intersections and frustum culling.
 * **Physics Integration:** Direct bindings and integration with modern physics backends (**Jolt** / **Bullet**) for rigid body dynamics and collision response.
 * **Low-Level Architecture:** Built with a focus on custom math frameworks, memory layout optimization, and clean component decoupling.
 
